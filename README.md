@@ -1,30 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Temporary Employee ID Allocation System
 
-## Getting Started
+This project implements a simple temporary employee ID allocation system using Next.js, React, and SQLite.
 
-First, run the development server:
+## Features
 
-```bash
-pnpm dev
-```
+*   **Temporary ID Allocation:** Employees can click a "Clock In" button to get a temporary employee ID within the range of 644100-644400.
+*   **IP Address Logging:** The system records the computer's IP address along with the allocated ID and allocation time.
+*   **ID Release (Clock Out):** Employees can click a "Clock Out" button to release their allocated ID.
+*   **Automatic ID Expiration:** Allocated IDs are automatically released at 24:00 (midnight) on the day they were allocated.
+*   **ID Reapplication:** An "Reapply" button allows employees to release their current ID and request a new one.
+*   **ID Availability Check:** The system prevents allocation if all IDs are currently in use.
+*   **Persistence:** Allocated IDs and their details are stored in a SQLite database, ensuring data persists across server restarts.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup and Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To set up and run this project locally, follow these steps:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1.  **Clone the repository:**
+    ```bash
+    git clone [repository-url]
+    cd [project-directory]
+    ```
+2.  **Install dependencies:**
+    This project uses `pnpm` as the package manager.
+    ```bash
+    pnpm install
+    ```
+3.  **Run the development server:**
+    ```bash
+    pnpm dev
+    ```
+    The application will be accessible at `http://localhost:3000`.
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+Open your browser and navigate to `http://localhost:3000`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+*   Click the "**Clock In**" button to get a temporary employee ID. The allocated ID and current time will be displayed.
+*   Click the "**Clock Out**" button to release your current ID.
+*   Click the "**Reapply**" button to release your current ID and get a new one.
+*   Error messages will be displayed if all IDs are in use or if there are other issues.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Technical Details
 
-## Deploy on Vercel
+### Frontend
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+*   **Framework:** Next.js (React)
+*   **Language:** TypeScript
+*   **Component:** `app/id-allocation-ui.tsx` handles the user interface and interacts with the backend API.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Backend
+
+*   **Framework:** Next.js API Routes
+*   **Database:** SQLite (`better-sqlite3`)
+*   **Database File:** `employee_ids.db` (created in the project root)
+*   **Database Initialization:** Handled by `app/db.ts` on server startup.
+*   **ID Allocation Logic:** `app/id-allocation-service.ts` contains the core logic for managing ID allocation, release, and cleanup.
+
+### API Endpoints
+
+*   **`/api/id-allocation` (GET)**
+    *   **Description:** Retrieves a list of currently allocated IDs. Also triggers cleanup of expired IDs.
+    *   **Response:** `{ allocatedIds: number[] }`
+*   **`/api/id-allocation` (POST)**
+    *   **Description:** Handles allocation and release of IDs.
+    *   **Request Body:**
+        ```json
+        {
+          "action": "allocate",
+          "ipAddress": "string"
+        }
+        ```
+        or
+        ```json
+        {
+          "action": "release",
+          "id": "number"
+        }
+        ```
+    *   **Response:** `{ success: boolean, id?: number, uniqueId?: string, error?: string }`
+
+### ID Range and Expiration
+
+*   **ID Range:** 644100 to 644400 (inclusive).
+*   **Expiration:** Each allocated ID expires at 24:00 (midnight) on the day it was allocated. A cleanup function runs on every GET request to the API to release expired IDs.
