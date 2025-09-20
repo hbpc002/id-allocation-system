@@ -22,10 +22,12 @@ export async function GET(request: Request) {
   const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
   
   const currentlyAllocated = getCurrentlyAllocatedIds();
-  const allocatedIdsWithIPs = Array.from(currentlyAllocated).map((id: number) => {
-    const row = db.prepare('SELECT id, ipAddress FROM allocated_ids WHERE id = ?').get(id) as { id: number, ipAddress: string };
-    return { id: row.id, ipAddress: row.ipAddress };
-  });
+  // Get all allocated IDs with their IP addresses directly from the database
+  const allocatedRows = db.prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
+  const allocatedIdsWithIPs = allocatedRows.map(row => ({
+    id: row.id,
+    ipAddress: row.ipAddress
+  }));
   const totalPoolIds = (db.prepare('SELECT COUNT(*) as count FROM employee_pool').get() as { count: number }).count;
   return NextResponse.json({ allocatedIds: allocatedIdsWithIPs, totalPoolIds, clientAllocatedId });
 }

@@ -20,6 +20,8 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'available',
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+  
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_allocated_ids_ipAddress ON allocated_ids (ipAddress);
 `);
 
 export default db;

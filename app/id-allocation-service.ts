@@ -19,6 +19,12 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
     return { id: existingAllocation.id, uniqueId: 'existing', ipAddress: ipAddress };
   }
   
+  // If forceNewAllocation is true, release the existing allocation first
+  if (existingAllocation && forceNewAllocation) {
+    console.log(`Force allocation requested for IP ${ipAddress}. Releasing existing ID ${existingAllocation.id} first.`);
+    db.prepare('DELETE FROM allocated_ids WHERE id = ?').run(existingAllocation.id);
+  }
+  
   const currentlyAllocated = getCurrentlyAllocatedIds();
   // Get an available ID from the employee_pool that is not currently allocated
   const availableIdRow = db.prepare(`
