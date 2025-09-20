@@ -84,3 +84,25 @@ Open your browser and navigate to `http://localhost:3000`.
 
 *   **ID Range:** 644100 to 644400 (inclusive).
 *   **Expiration:** Each allocated ID expires at 24:00 (midnight) on the day it was allocated. A cleanup function runs on every GET request to the API to release expired IDs.
+
+### Employee Pool Upload
+
+### Supported File Formats
+*   **Text File (.txt):** Each line should contain a single employee ID.
+
+### How to Upload
+1.  Navigate to the main page.
+2.  Locate the file upload component (a folder icon or "Upload Employee Pool" button).
+3.  Click to select a text file containing employee IDs.
+4.  Click the upload button to import the IDs.
+
+### File Content Requirements
+*   Each line should contain a valid integer ID within the range of 644100-644400.
+*   IDs must be unique and not already allocated.
+*   Empty lines are ignored.
+
+### Notes
+*   **File Format:** Ensure the file is saved as plain text (.txt).
+*   **ID Range:** Only IDs within 644100-644400 are accepted.
+*   **File Size:** There is no strict limit, but excessively large files may take longer to process.
+*   **Upload Feedback:** After upload, the system will display the number of successfully imported IDs.

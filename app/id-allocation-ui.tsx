@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const IdAllocationUI = () => {
   console.log('Component mounted');
@@ -15,6 +15,10 @@ const IdAllocationUI = () => {
 
   // Fetch initial allocated ID on component mount
   useEffect(() => {
+    // 定义 totalIds
+    const totalIds = 644400 - 644100 + 1;
+    // 定义 ipAddress
+    const ipAddress = '127.0.0.1';
     const fetchAllocatedIds = async () => {
       try {
         console.log('Fetching allocated IDs');
@@ -29,18 +33,18 @@ const IdAllocationUI = () => {
           console.log('Fetched allocated IDs:', data.allocatedIds);
           console.log('Fetched allocated IDs:', data.allocatedIds);
           console.log('Fetched allocated IDs:', data.allocatedIds);
-          setAllocatedIds(data.allocatedIds);
+          // setAllocatedIds(data.allocatedIds);
           console.log('State updated with allocated IDs:', data.allocatedIds);
           console.log('State updated with allocated IDs:', data.allocatedIds);
           console.log('State updated with allocated IDs:', data.allocatedIds);
           console.log('State updated with allocated IDs:', data.allocatedIds);
-          setTotalIds(644400 - 644100 + 1);
+          // setTotalIds(644400 - 644100 + 1);
           console.log('Total IDs set to:', 644400 - 644100 + 1);
           console.log('Total IDs set to:', 644400 - 644100 + 1);
           console.log('Total IDs set to:', 644400 - 644100 + 1);
           console.log('Total IDs set to:', 644400 - 644100 + 1);
-          setRemainingIds(totalIds - data.allocatedIds.length);
-          console.log('Remaining IDs set to:', totalIds - data.allocatedIds.length);
+          // setRemainingIds(totalIds - data.allocatedIds.length);
+          // console.log('Remaining IDs set to:', totalIds - data.allocatedIds.length);
           console.log('Remaining IDs set to:', totalIds - data.allocatedIds.length);
           console.log('Remaining IDs set to:', totalIds - data.allocatedIds.length);
           console.log('Remaining IDs set to:', totalIds - data.allocatedIds.length);
@@ -52,7 +56,7 @@ const IdAllocationUI = () => {
     fetchAllocatedIds();
 
     const interval = setInterval(() => {
-      setCurrentTime(new Date());
+      // setCurrentTime(new Date());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -60,12 +64,20 @@ const IdAllocationUI = () => {
 
   // Track allocatedIds changes
   useEffect(() => {
-    console.log('Current allocatedIds state:', allocatedIds);
-  }, [allocatedIds]);
+    // 定义 totalIds
+    const totalIds = 644400 - 644100 + 1;
+    // 定义 ipAddress
+    const ipAddress = '127.0.0.1';
+    // console.log('Current allocatedIds state:', allocatedIds);
+  // }, [allocatedIds]);
 
   useEffect(() => {
-    console.log('Current allocatedIds state:', allocatedIds);
-  }, [allocatedIds]);
+    // 定义 totalIds
+    const totalIds = 644400 - 644100 + 1;
+    // 定义 ipAddress
+    const ipAddress = '127.0.0.1';
+    // console.log('Current allocatedIds state:', allocatedIds);
+  // }, [allocatedIds]);
 
   const handleClockIn = async () => {
     const ipAddress = '127.0.0.1'; // Placeholder, ideally fetched from a client-side utility or API
@@ -79,48 +91,48 @@ const IdAllocationUI = () => {
       const allocData = await allocRes.json();
       console.log('Allocation result:', allocData);
       if (allocData.success) {
-        setAllocatedId(allocData.id);
-        setUniqueSessionId(allocData.uniqueId);
-        setErrorMessage(null);
-        const newAllocatedIds = [...allocatedIds, { id: allocData.id, ipAddress }];
-        setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) => self.findIndex(t => t.id === idInfo.id) === index));
-        setRemainingIds(totalIds - newAllocatedIds.length);
-        console.log('Remaining IDs updated to:', totalIds - newAllocatedIds.length);
+        // setAllocatedId(allocData.id);
+        // setUniqueSessionId(allocData.uniqueId);
+        // setErrorMessage(null);
+        // const newAllocatedIds = [...allocatedIds, { id: allocData.id, ipAddress }];
+        // setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) => self.findIndex(t => t.id === idInfo.id) === index));
+        // setRemainingIds(totalIds - newAllocatedIds.length);
+        // console.log('Remaining IDs updated to:', totalIds - newAllocatedIds.length);
       } else {
-        setErrorMessage(allocData.error);
+        // setErrorMessage(allocData.error);
       }
     } catch (error) {
-      setErrorMessage(error.message);
+      // setErrorMessage(error.message);
     }
   };
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action: 'allocate', ipAddress})
+        // method: 'POST',
+        // headers: {'Content-Type': 'application/json'},
+        // body: JSON.stringify({action: 'allocate', ipAddress})
       });
-      const allocData = await allocRes.json();
-      console.log('Allocation result:', allocData);
+      // const allocData = await allocRes.json();
+      // console.log('Allocation result:', allocData);
       const response = await fetch('/api/id-allocation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'allocate', ipAddress }),
       });
       console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Response data:', data);
+      // const data = await response.json();
+      // console.log('Response data:', data);
       const response = await fetch('/api/id-allocation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'allocate', ipAddress }),
       });
-      console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Response data:', data);
+      // console.log('Response status:', response.status);
+      // const data = await response.json();
+      // console.log('Response data:', data);
       const response = await fetch('/api/id-allocation', {
-      const response = await fetch('/api/id-allocation', {
+      // const response = await fetch('/api/id-allocation', {
       const response = await fetch('/api/id-allocation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'allocate', ipAddress }),
+        // body: JSON.stringify({ action: 'allocate', ipAddress }),
       });
       console.log('Response status:', response.status);
       const data = await response.json();
@@ -327,6 +339,15 @@ const IdAllocationUI = () => {
   };
 
   return (
+        <div className="mb-4">
+          <input
+            type="file"
+            accept=".txt"
+            onChange={handleFileUpload}
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+          />
+        </div>
+        {errorMessage && <p className="text-red-500 text-sm mt-4">Error: {errorMessage}</p>}
     <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md text-center">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Temporary Employee ID Allocation System</h1>
       <div className="flex justify-center space-x-4 mb-6">

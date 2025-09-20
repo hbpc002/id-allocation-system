@@ -14,6 +14,12 @@ db.exec(`
     ipAddress TEXT NOT NULL,
     expiresAt TEXT NOT NULL
   );
+ 
+  CREATE TABLE IF NOT EXISTS employee_pool (
+    id INTEGER PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'available',
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 export default db;

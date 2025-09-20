@@ -34,6 +34,35 @@ export async function POST(request: Request) {
       clearAllIds();
       console.log('All IDs cleared');
       return NextResponse.json({ success: true });
+    } else if (action === 'uploadPool') {
+      const text = await request.text();
+      const lines = text.split('\n');
+      const uploadedIds = new Set<number>();
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed) {
+          const id = parseInt(trimmed);
+          if (!isNaN(id) && id >= 644100 && id <= 644400) {
+            uploadedIds.add(id);
+          }
+        }
+      }
+
+      if (uploadedIds.size === 0) {
+        return NextResponse.json({ success: false, error: 'No valid IDs found in the file' }, { status: 400 });
+      }
+
+      db.transaction(() => {
+        uploadedIds.forEach(id => {
+          db.prepare('INSERT OR IGNORE INTO employee_pool (id) VALUES (?)').run(id);
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        uploadedCount: uploadedIds.size
+      });
     } else {
       console.log('Invalid action:', action);
       return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
