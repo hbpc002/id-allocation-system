@@ -60,7 +60,7 @@ const IdAllocationUI = () => {
   return (
     <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md text-center">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-        Temporary Employee ID Allocation System
+        分机号分配系统
       </h1>
       
       {errorMessage && (
