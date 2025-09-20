@@ -28,6 +28,9 @@ export const useIdAllocation = () => {
       if (data.totalPoolIds !== undefined) {
         setTotalIds(data.totalPoolIds);
       }
+      if (data.clientAllocatedId !== undefined) {
+        setAllocatedId(data.clientAllocatedId);
+      }
     } catch (error) {
       console.error('Failed to fetch allocated IDs:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error');

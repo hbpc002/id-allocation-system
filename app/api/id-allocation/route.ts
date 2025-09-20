@@ -4,13 +4,30 @@ import db from '../../db';
 
 export async function GET(request: Request) {
   cleanupExpiredIds(); // Clean up expired IDs on every GET request to ensure fresh data
+  
+  // Extract client IP from headers, handling IPv4 and IPv6 properly
+  let clientIp = request.headers.get('x-forwarded-for') ||
+                 request.headers.get('cf-connecting-ip') ||
+                 request.headers.get('fastly-client-ip') ||
+                 request.headers.get('true-client-ip') ||
+                 request.headers.get('x-real-ip') ||
+                 'unknown';
+  // Handle IPv4-mapped IPv6 addresses (e.g., ::ffff:127.0.0.1)
+  if (typeof clientIp === 'string' && clientIp.startsWith('::ffff:')) {
+    clientIp = clientIp.substring(7);
+  }
+  
+  // Get currently allocated IDs for the client IP
+  const clientAllocatedIdRow = db.prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
+  const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
+  
   const currentlyAllocated = getCurrentlyAllocatedIds();
   const allocatedIdsWithIPs = Array.from(currentlyAllocated).map((id: number) => {
     const row = db.prepare('SELECT id, ipAddress FROM allocated_ids WHERE id = ?').get(id) as { id: number, ipAddress: string };
     return { id: row.id, ipAddress: row.ipAddress };
   });
   const totalPoolIds = (db.prepare('SELECT COUNT(*) as count FROM employee_pool').get() as { count: number }).count;
-  return NextResponse.json({ allocatedIds: allocatedIdsWithIPs, totalPoolIds });
+  return NextResponse.json({ allocatedIds: allocatedIdsWithIPs, totalPoolIds, clientAllocatedId });
 }
 
 export async function POST(request: Request) {
