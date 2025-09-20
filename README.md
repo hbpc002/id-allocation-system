@@ -92,9 +92,9 @@ Open your browser and navigate to `http://localhost:3000`.
 
 ### How to Upload
 1.  Navigate to the main page.
-2.  Locate the file upload component (a folder icon or "Upload Employee Pool" button).
-3.  Click to select a text file containing employee IDs.
-4.  Click the upload button to import the IDs.
+2.  Click the "Upload Pool" button.
+3.  Select a text file containing employee IDs (one ID per line).
+4.  The system will automatically process and import the valid IDs.
 
 ### File Content Requirements
 *   Each line should contain a valid integer ID within the range of 644100-644400.

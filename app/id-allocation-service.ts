@@ -1,8 +1,6 @@
 import db from './db';
 
-const ID_RANGE_START = 644100;
-const ID_RANGE_END = 644400;
-const TOTAL_IDS = ID_RANGE_END - ID_RANGE_START + 1;
+// Removed hard-coded ID range and total count
 
 // Function to get currently allocated IDs from the database
 const getCurrentlyAllocatedIds = () => {
@@ -13,20 +11,20 @@ const getCurrentlyAllocatedIds = () => {
 const allocateId = (ipAddress: string) => {
   console.log(`ID allocation requested for IP: ${ipAddress}`);
   const currentlyAllocated = getCurrentlyAllocatedIds();
-  if (currentlyAllocated.size >= TOTAL_IDS) {
-    console.log('All IDs are in use');
-    throw new Error('All IDs are in use');
+  // Get an available ID from the employee_pool that is not currently allocated
+  const availableIdRow = db.prepare(`
+    SELECT id FROM employee_pool
+    WHERE id NOT IN (SELECT id FROM allocated_ids)
+    LIMIT 1
+  `).get() as { id: number } | undefined;
+
+  if (!availableIdRow) {
+    console.log('No available ID found in the pool');
+    throw new Error('No available ID found in the pool');
   }
 
-  let availableId: number | undefined;
-  for (let i = 0; i < TOTAL_IDS; i++) {
-    const potentialId = ID_RANGE_START + i;
-    if (!currentlyAllocated.has(potentialId)) {
-      availableId = potentialId;
-      console.log(`Available ID found: ${availableId}`);
-      break;
-    }
-  }
+  const availableId = availableIdRow.id;
+  console.log(`Available ID found: ${availableId}`);
 
   if (availableId === undefined) {
     console.log('No available ID found (should not happen if size check passed)');
