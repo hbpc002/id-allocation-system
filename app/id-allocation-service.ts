@@ -8,7 +8,7 @@ const getCurrentlyAllocatedIds = () => {
   return new Set(rows.map(row => row.id));
 };
 
-const allocateId = (ipAddress: string, forceNewAllocation: boolean = false) => {
+const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, currentId?: number) => {
   console.log(`ID allocation requested for IP: ${ipAddress}, forceNewAllocation: ${forceNewAllocation}`);
   
   // Check if this IP already has an allocated ID
@@ -24,6 +24,8 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false) => {
   const availableIdRow = db.prepare(`
     SELECT id FROM employee_pool
     WHERE id NOT IN (SELECT id FROM allocated_ids)
+      ${currentId !== undefined ? 'AND id != ?' : ''}
+    ORDER BY RANDOM()
     LIMIT 1
   `).get() as { id: number } | undefined;
 
@@ -49,17 +51,26 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false) => {
   console.log(`Allocating ID: ${availableId}, IP: ${ipAddress}`);
   db.prepare(
     'INSERT INTO allocated_ids (id, uniqueSessionId, allocationTime, ipAddress, expiresAt) VALUES (?, ?, ?, ?, ?)'
-  ).run(availableId, uniqueSessionId, allocationTime, ipAddress, expiresAtISO);
+  ).run(
+    availableId,
+    uniqueSessionId,
+    allocationTime,
+    ipAddress,
+    expiresAtISO
+  );
 
   console.log(`ID allocated successfully: ${availableId}`);
   return { id: availableId, uniqueId: uniqueSessionId, ipAddress: ipAddress };
 };
 
 const releaseId = (id: number) => {
+  console.log(`Releasing ID: ${id}`);
   const info = db.prepare('DELETE FROM allocated_ids WHERE id = ?').run(id);
   if (info.changes === 0) {
+    console.log(`ID ${id} is not allocated or already released`);
     throw new Error('ID is not allocated or already released');
   }
+  console.log(`ID ${id} released successfully`);
 };
 
 const cleanupExpiredIds = () => {

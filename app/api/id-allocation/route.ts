@@ -14,6 +14,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  console.log('Handling POST request');
   // For uploadPool, we don't use JSON, so handle it separately
   const contentType = request.headers.get('content-type');
   if (contentType && contentType.includes('text/plain')) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const text = await request.text();
     const lines = text.split('\n');
     const uploadedIds = new Set<number>();
-
+    
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed) {
@@ -31,11 +32,12 @@ export async function POST(request: Request) {
         }
       }
     }
-
+    
     if (uploadedIds.size === 0) {
+      console.log('No valid IDs found in the file');
       return NextResponse.json({ success: false, error: 'No valid IDs found in the file' }, { status: 400 });
     }
-
+    
     console.log('Starting database transaction for uploadPool');
     try {
       db.transaction(() => {
@@ -50,11 +52,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Database error during upload' }, { status: 500 });
     }
     console.log('Proceeding to fetch updated total pool count');
-
+    
     // Log the current state of the employee_pool for debugging
     const poolRows = db.prepare('SELECT id FROM employee_pool').all() as { id: number }[];
     console.log('Current employee_pool after upload:', poolRows);
-
+    
     let updatedTotalPoolIds: number;
     try {
       // Get updated total pool count
@@ -63,17 +65,19 @@ export async function POST(request: Request) {
       console.error('Failed to get updated total pool count:', countError);
       return NextResponse.json({ success: false, error: 'Failed to get total count after upload' }, { status: 500 });
     }
-
+    
+    console.log(`Total pool IDs after upload: ${updatedTotalPoolIds}`);
     return NextResponse.json({
       success: true,
       uploadedCount: uploadedIds.size,
       totalPoolIds: updatedTotalPoolIds
     });
   }
-
+  
   // For other actions, parse JSON
   const { action, id, forceNewAllocation } = await request.json();
   let ipAddress = 'unknown';
+  
   if (request.body && typeof request.body === 'object' && 'ipAddress' in request.body) {
     ipAddress = request.body.ipAddress as string;
   } else {
@@ -104,14 +108,16 @@ export async function POST(request: Request) {
   }
   console.log('Extracted ipAddress from headers:', ipAddress);
   console.log('Received action:', action);
-
+  
   try {
     if (action === 'allocate') {
       const result = allocateId(ipAddress, forceNewAllocation);
+      console.log('Allocation result:', result);
       return NextResponse.json({ success: true, id: result.id, uniqueId: result.uniqueId, ipAddress });
     } else if (action === 'release') {
+      console.log('Releasing ID:', id);
       releaseId(id);
-      console.log('Released ID:', id);
+      console.log('ID released successfully');
       return NextResponse.json({ success: true });
     } else if (action === 'clearAll') {
       clearAllIds();
@@ -121,7 +127,7 @@ export async function POST(request: Request) {
       const text = await request.text();
       const lines = text.split('\n');
       const uploadedIds = new Set<number>();
-
+      
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed) {
@@ -131,11 +137,12 @@ export async function POST(request: Request) {
           }
         }
       }
-
+      
       if (uploadedIds.size === 0) {
+        console.log('No valid IDs found in the file');
         return NextResponse.json({ success: false, error: 'No valid IDs found in the file' }, { status: 400 });
       }
-
+      
       console.log('Starting database transaction for uploadPool');
       try {
         db.transaction(() => {
@@ -150,12 +157,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: 'Database error during upload' }, { status: 500 });
       }
       console.log('Proceeding to fetch updated total pool count');
-      // No closing brace here - this was a mistake
-
+      
       // Log the current state of the employee_pool for debugging
       const poolRows = db.prepare('SELECT id FROM employee_pool').all() as { id: number }[];
       console.log('Current employee_pool after upload:', poolRows);
-
+      
       let updatedTotalPoolIds: number;
       try {
         // Get updated total pool count
@@ -164,7 +170,8 @@ export async function POST(request: Request) {
         console.error('Failed to get updated total pool count:', countError);
         return NextResponse.json({ success: false, error: 'Failed to get total count after upload' }, { status: 500 });
       }
-
+      
+      console.log(`Total pool IDs after upload: ${updatedTotalPoolIds}`);
       return NextResponse.json({
         success: true,
         uploadedCount: uploadedIds.size,
@@ -175,6 +182,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
   } catch (error: any) {
+    console.error('Error in POST handler:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
