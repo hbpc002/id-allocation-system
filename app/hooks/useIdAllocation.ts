@@ -134,7 +134,7 @@ export const useIdAllocation = () => {
           return;
         }
         console.log(`Old ID ${allocatedId} released successfully`);
-        setAllocatedId(null);
+        // 不要清除 allocatedId，保持显示旧ID直到新ID分配完成
         setUniqueSessionId(null);
         setErrorMessage('旧 ID 已成功释放');
         // Remove from local state
@@ -149,6 +149,7 @@ export const useIdAllocation = () => {
     console.log('Allocating new ID...');
     try {
       await handleClockIn(e, true);
+      // handleClockIn 内部已经处理了 allocatedId 的更新
       console.log('New ID allocated successfully');
       setErrorMessage('新 ID 已成功分配');
       // Refresh data after allocation to ensure remainingIds is updated

@@ -63,6 +63,10 @@ const IdAllocationUI = () => {
         Temporary Employee ID Allocation System
       </h1>
       
+      {errorMessage && (
+        <p className="text-red-500 text-sm mb-4">hey: {errorMessage}</p>
+      )}
+
       {allocatedId !== null && (
         <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
           <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">Your Allocated ID</p>
@@ -91,9 +95,6 @@ const IdAllocationUI = () => {
         </div>
       </>
 
-      {errorMessage && (
-        <p className="text-red-500 text-sm mt-4">Error: {errorMessage}</p>
-      )}
     </div>
   );
 };
