@@ -72,18 +72,43 @@ export async function POST(request: Request) {
   }
 
   // For other actions, parse JSON
-  const { action, id } = await request.json();
-  const ipAddress = (request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || request.headers.get('fastly-client-ip') || request.headers.get('true-client-ip') || request.headers.get('x-real-ip')) || 'unknown';
+  const { action, id, forceNewAllocation } = await request.json();
+  let ipAddress = 'unknown';
+  if (request.body && typeof request.body === 'object' && 'ipAddress' in request.body) {
+    ipAddress = request.body.ipAddress as string;
+  } else {
+    // Extract client IP from headers, handling IPv4 and IPv6 properly
+    let clientIp = request.headers.get('x-forwarded-for') ||
+                   request.headers.get('cf-connecting-ip') ||
+                   request.headers.get('fastly-client-ip') ||
+                   request.headers.get('true-client-ip') ||
+                   request.headers.get('x-real-ip') ||
+                   'unknown';
+    // Handle IPv4-mapped IPv6 addresses (e.g., ::ffff:127.0.0.1)
+    if (typeof clientIp === 'string' && clientIp.startsWith('::ffff:')) {
+      clientIp = clientIp.substring(7);
+    }
+    // If still unknown or localhost, try to get remoteAddress from NextRequest
+    if (clientIp === '127.0.0.1' || clientIp === '::1') {
+      const nextRequest = request as any;
+      if (nextRequest.socket && nextRequest.socket.remoteAddress) {
+        clientIp = nextRequest.socket.remoteAddress;
+      }
+    }
+    // Final fallback: if still localhost or unknown, use the actual network interface IP from server context
+    if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === 'unknown') {
+      const serverIp = process.env.NEXT_PUBLIC_SERVER_IP || 'unknown';
+      clientIp = serverIp !== 'unknown' ? serverIp : 'unknown';
+    }
+    ipAddress = clientIp;
+  }
   console.log('Extracted ipAddress from headers:', ipAddress);
   console.log('Received action:', action);
 
   try {
     if (action === 'allocate') {
-      const result = allocateId(ipAddress);
-      // console.log('Allocated ID with ipAddress:', result.id, result.ipAddress);
-      // console.log('Allocated ID with ipAddress:', result.id, result.ipAddress);
-      // console.log('Allocated ID:', result.id);
-      return NextResponse.json({ success: true, id: result.id, uniqueId: result.uniqueId });
+      const result = allocateId(ipAddress, forceNewAllocation);
+      return NextResponse.json({ success: true, id: result.id, uniqueId: result.uniqueId, ipAddress });
     } else if (action === 'release') {
       releaseId(id);
       console.log('Released ID:', id);

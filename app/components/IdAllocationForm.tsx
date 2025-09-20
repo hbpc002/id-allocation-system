@@ -3,9 +3,9 @@
 import React from 'react';
 
 interface IdAllocationFormProps {
-  onClockIn: () => void;
-  onClockOut: () => void;
-  onReapply: () => void;
+  onClockIn: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onClockOut: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onReapply: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onClearAll: () => void;
   onUploadPool: (file: File) => void;
 }

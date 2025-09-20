@@ -8,8 +8,17 @@ const getCurrentlyAllocatedIds = () => {
   return new Set(rows.map(row => row.id));
 };
 
-const allocateId = (ipAddress: string) => {
-  console.log(`ID allocation requested for IP: ${ipAddress}`);
+const allocateId = (ipAddress: string, forceNewAllocation: boolean = false) => {
+  console.log(`ID allocation requested for IP: ${ipAddress}, forceNewAllocation: ${forceNewAllocation}`);
+  
+  // Check if this IP already has an allocated ID
+  const existingAllocation = db.prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(ipAddress) as { id: number } | undefined;
+  
+  if (existingAllocation && !forceNewAllocation) {
+    console.log(`IP ${ipAddress} already has allocated ID ${existingAllocation.id}. Returning existing allocation.`);
+    return { id: existingAllocation.id, uniqueId: 'existing', ipAddress: ipAddress };
+  }
+  
   const currentlyAllocated = getCurrentlyAllocatedIds();
   // Get an available ID from the employee_pool that is not currently allocated
   const availableIdRow = db.prepare(`

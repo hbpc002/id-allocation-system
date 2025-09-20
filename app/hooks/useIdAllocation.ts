@@ -47,13 +47,16 @@ export const useIdAllocation = () => {
   }, []);
 
   // Clock In: Allocate a new ID
-  const handleClockIn = async () => {
-    const ipAddress = '127.0.0.1';
+  const handleClockIn = async (e?: React.MouseEvent<HTMLButtonElement>, forceNewAllocation: boolean = false) => {
+    if (allocatedId !== null && !forceNewAllocation) {
+      setErrorMessage('您已申请到工号，请尝试签入。');
+      return;
+    }
     try {
       const response = await fetch('/api/id-allocation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'allocate', ipAddress }),
+        body: JSON.stringify({ action: 'allocate', forceNewAllocation }),
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
@@ -61,7 +64,8 @@ export const useIdAllocation = () => {
         setAllocatedId(data.id);
         setUniqueSessionId(data.uniqueId);
         setErrorMessage(null);
-        const newAllocatedIds = [...allocatedIds, { id: data.id, ipAddress }];
+        // Use the ipAddress from the response, not a potentially undefined variable
+        const newAllocatedIds = [...allocatedIds, { id: data.id, ipAddress: data.ipAddress }];
         setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) =>
           self.findIndex(t => t.id === idInfo.id) === index
         ));
@@ -74,7 +78,7 @@ export const useIdAllocation = () => {
   };
 
   // Clock Out: Release current ID
-  const handleClockOut = async () => {
+  const handleClockOut = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (allocatedId === null) return;
     try {
       const response = await fetch('/api/id-allocation', {
@@ -88,6 +92,8 @@ export const useIdAllocation = () => {
         setAllocatedId(null);
         setUniqueSessionId(null);
         setErrorMessage(null);
+        // Remove from local state
+        setAllocatedIds(allocatedIds.filter(idInfo => idInfo.id !== allocatedId));
       } else {
         setErrorMessage(data.error || 'Release failed');
       }
@@ -97,9 +103,32 @@ export const useIdAllocation = () => {
   };
 
   // Reapply: Release current ID and allocate a new one
-  const handleReapply = async () => {
-    await handleClockOut();
-    await handleClockIn();
+  const handleReapply = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (allocatedId !== null) {
+      try {
+        const response = await fetch('/api/id-allocation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'release', id: allocatedId }),
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.success) {
+          setAllocatedId(null);
+          setUniqueSessionId(null);
+          setErrorMessage(null);
+          // Remove from local state
+          setAllocatedIds(allocatedIds.filter(idInfo => idInfo.id !== allocatedId));
+        } else {
+          setErrorMessage(data.error || 'Release failed');
+          return;
+        }
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+        return;
+      }
+    }
+    await handleClockIn(e, true);
   };
 
   // Clear All: Reset all allocated IDs
