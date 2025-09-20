@@ -22,6 +22,17 @@ db.exec(`
   );
   
   CREATE UNIQUE INDEX IF NOT EXISTS idx_allocated_ids_ipAddress ON allocated_ids (ipAddress);
+  
+  CREATE TABLE IF NOT EXISTS passwords (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
+// Insert default password into database (if not exists)
+const defaultPassword = 'root123';
+const existingPassword = db.prepare('SELECT value FROM passwords WHERE key = ?').get('login_password');
+if (!existingPassword) {
+  db.prepare('INSERT INTO passwords (key, value) VALUES (?, ?)').run('login_password', defaultPassword);
+}
 export default db;

@@ -8,6 +8,7 @@ interface IdAllocationFormProps {
   onReapply: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onClearAll: () => void;
   onUploadPool: (file: File) => void;
+  isLoggedIn: boolean;
 }
 
 export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
@@ -16,6 +17,7 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
   onReapply,
   onClearAll,
   onUploadPool,
+  isLoggedIn,
 }) => {
   return (
     <div className="flex justify-center space-x-4 mb-6">
@@ -37,18 +39,22 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
       >
         Reapply
       </button>
-      <button
-        onClick={onClearAll}
-        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
-      >
-        Clear All
-      </button>
-      <button
-        onClick={() => document.getElementById('fileInput')?.click()}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
-      >
-        Upload Pool
-      </button>
+      {isLoggedIn && (
+        <>
+          <button
+            onClick={onClearAll}
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+          >
+            Clear All
+          </button>
+          <button
+            onClick={() => document.getElementById('fileInput')?.click()}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+          >
+            Upload Pool
+          </button>
+        </>
+      )}
       <input
         id="fileInput"
         type="file"

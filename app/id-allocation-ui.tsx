@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIdAllocation } from './hooks/useIdAllocation';
 import { IdAllocationForm } from './components/IdAllocationForm';
 import { IdAllocationList } from './components/IdAllocationList';
@@ -21,6 +21,42 @@ const IdAllocationUI = () => {
     uploadEmployeePool,
   } = useIdAllocation();
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const handleLoginEvent = async (e: Event) => {
+      try {
+        console.log('Attempting to fetch login password from API');
+        // Fetch the actual stored password from the database via API
+        const response = await fetch('/api/passwords/login_password');
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to fetch password. Status:', response.status, 'Response:', errorText);
+          throw new Error('Failed to fetch password');
+        }
+        
+        const { value: storedPassword } = await response.json();
+        console.log('Successfully fetched password from API');
+        // Get password from event detail
+        const password = (e as CustomEvent<{ password: string }>).detail?.password;
+        if (password === storedPassword) {
+          setIsLoggedIn(true);
+        } else {
+          alert('Invalid password');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please try again.');
+      }
+    };
+
+    // Listen for login-trigger events with password
+    document.addEventListener('login-trigger', handleLoginEvent);
+    return () => {
+      document.removeEventListener('login-trigger', handleLoginEvent);
+    };
+  }, []);
+
   return (
     <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md text-center">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
@@ -34,23 +70,26 @@ const IdAllocationUI = () => {
         </div>
       )}
 
-      <IdAllocationForm
-        onClockIn={handleClockIn}
-        onClockOut={handleClockOut}
-        onReapply={handleReapply}
-        onClearAll={handleClearAll}
-        onUploadPool={uploadEmployeePool}
-      />
+      <>
+        <IdAllocationForm
+          onClockIn={handleClockIn}
+          onClockOut={handleClockOut}
+          onReapply={handleReapply}
+          onClearAll={handleClearAll}
+          onUploadPool={uploadEmployeePool}
+          isLoggedIn={isLoggedIn}
+        />
 
-      <IdAllocationStatus
-        totalIds={totalIds}
-        remainingIds={remainingIds}
-        currentTime={currentTime}
-      />
+        <IdAllocationStatus
+          totalIds={totalIds}
+          remainingIds={remainingIds}
+          currentTime={currentTime}
+        />
 
-      <div className="mb-4">
-        <IdAllocationList allocatedIds={allocatedIds} />
-      </div>
+        <div className="mb-4">
+          <IdAllocationList allocatedIds={allocatedIds} />
+        </div>
+      </>
 
       {errorMessage && (
         <p className="text-red-500 text-sm mt-4">Error: {errorMessage}</p>
