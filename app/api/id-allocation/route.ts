@@ -60,9 +60,11 @@ export async function POST(request: Request) {
     console.log('Starting database transaction for uploadPool');
     try {
       db.transaction(() => {
+        console.log('Clearing existing employee_pool');
+        db.prepare('DELETE FROM employee_pool').run();
         console.log(`Inserting ${uploadedIds.size} IDs into employee_pool`);
         uploadedIds.forEach(id => {
-          db.prepare('INSERT OR IGNORE INTO employee_pool (id) VALUES (?)').run(id);
+          db.prepare('INSERT INTO employee_pool (id) VALUES (?)').run(id);
         });
         console.log('Database transaction completed successfully');
       })();

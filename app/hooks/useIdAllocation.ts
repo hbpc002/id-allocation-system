@@ -7,12 +7,19 @@ interface AllocatedIdInfo {
   ipAddress: string;
 }
 
+// Create a consistent date initialization to avoid hydration mismatch
+const getInitialDate = (): Date => {
+  // Use a fixed date in the past to ensure server and client start with the same value
+  // This will be updated immediately on the client side
+  return new Date(Date.UTC(2000, 0, 1, 0, 0, 0));
+};
+
 export const useIdAllocation = () => {
   const [allocatedIds, setAllocatedIds] = useState<AllocatedIdInfo[]>([]);
   const [allocatedId, setAllocatedId] = useState<number | null>(null);
   const [uniqueSessionId, setUniqueSessionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [currentTime, setCurrentTime] = useState<Date>(getInitialDate());
   const [totalIds, setTotalIds] = useState<number>(0);
   const remainingIds = totalIds - allocatedIds.length;
 
