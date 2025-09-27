@@ -50,7 +50,9 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
   const uniqueSessionId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
   const allocationTime = new Date().toISOString();
   const expiresAt = new Date();
-  expiresAt.setHours(23, 59, 59, 999); // Set to end of current day
+  // Set to end of current day in China timezone (UTC+8)
+  // Since the container is already in China timezone, we don't need to add 8 hours
+  expiresAt.setHours(23, 59, 59, 999);
   const expiresAtISO = expiresAt.toISOString();
 
   console.log(`Allocating ID: ${availableId}, IP: ${ipAddress}`);
@@ -79,8 +81,10 @@ const releaseId = (id: number) => {
 };
 
 const cleanupExpiredIds = () => {
-  const now = new Date().toISOString();
-  db.prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(now);
+  const now = new Date();
+  // Since the container is already in China timezone, we can use the time directly
+  const nowISO = now.toISOString();
+  db.prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(nowISO);
 };
 
 // Initial cleanup on service start

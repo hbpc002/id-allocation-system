@@ -23,8 +23,10 @@ RUN pnpm build && \
 # 多阶段构建 - 第二阶段：运行环境
 FROM node:20-alpine AS runner
 
-# 安装必要的系统依赖并创建用户
-RUN apk add --no-cache dumb-init && \
+# 安装必要的系统依赖、时区数据并创建用户
+RUN apk add --no-cache dumb-init tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
     addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 

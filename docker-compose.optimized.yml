@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  app:
+    image: hbpc002/hb-nextjs-app:optimized
+    container_name: nextjs-app-optimized
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - LOGIN_PASSWORD=${LOGIN_PASSWORD:-root123}
+      - CUSTOM_KEY=${CUSTOM_KEY:-default_key}
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+      - TZ=Asia/Shanghai
+    volumes:
+      - db_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/id-allocation"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    # 安全配置
+    user: "1001:1001"  # 使用非root用户运行
+    read_only: true  # 只读文件系统
+    tmpfs:
+      - /tmp
+      - /app/.next/cache  # Next.js缓存目录
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db_data:
+    driver: local
+    name: nextjs-app-optimized-db-data
+
+networks:
+  app-network:
+    driver: bridge
+    name: nextjs-app-optimized-network

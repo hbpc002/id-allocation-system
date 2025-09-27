@@ -50,7 +50,9 @@ export const useIdAllocation = () => {
 
     // Update current time every second
     const interval = setInterval(() => {
-      setCurrentTime(new Date());
+      // Create date object - it will already be in China timezone due to Docker settings
+      const now = new Date();
+      setCurrentTime(now);
     }, 1000);
 
     return () => clearInterval(interval);

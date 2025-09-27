@@ -1,8 +1,10 @@
 # 开发环境Dockerfile
 FROM node:20-alpine
 
-# 安装必要的系统依赖和pnpm
-RUN apk add --no-cache dumb-init git && \
+# 安装必要的系统依赖、时区数据和pnpm
+RUN apk add --no-cache dumb-init git tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
     npm install -g pnpm@8
 
 # 设置工作目录
@@ -30,6 +32,7 @@ EXPOSE 3000
 ENV NODE_ENV=development
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV TZ=Asia/Shanghai
 
 # 启动开发服务器
 ENTRYPOINT ["dumb-init", "--"]
