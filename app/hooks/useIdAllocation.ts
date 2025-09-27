@@ -88,7 +88,7 @@ export const useIdAllocation = () => {
   };
 
   // Clock Out: Release current ID
-  const handleClockOut = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClockOut = async () => {
     if (allocatedId === null) return;
     try {
       const response = await fetch('/api/id-allocation', {
@@ -109,54 +109,6 @@ export const useIdAllocation = () => {
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
-    }
-  };
-
-  // Reapply: Release current ID and allocate a new one
-  const handleReapply = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('Starting reapply process...');
-    if (allocatedId !== null) {
-      console.log(`Releasing old ID: ${allocatedId}`);
-      try {
-        const releaseResponse = await fetch('/api/id-allocation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'release', id: allocatedId }),
-        });
-        if (!releaseResponse.ok) {
-          console.error(`Failed to release ID: HTTP error! status: ${releaseResponse.status}`);
-          throw new Error(`Failed to release ID: HTTP error! status: ${releaseResponse.status}`);
-        }
-        const releaseData = await releaseResponse.json();
-        if (!releaseData.success) {
-          console.error(`Release failed with error: ${releaseData.error}`);
-          setErrorMessage(releaseData.error || 'Failed to release ID');
-          return;
-        }
-        console.log(`Old ID ${allocatedId} released successfully`);
-        // 不要清除 allocatedId，保持显示旧ID直到新ID分配完成
-        setUniqueSessionId(null);
-        setErrorMessage('旧 ID 已成功释放');
-        // Remove from local state
-        setAllocatedIds(allocatedIds.filter(idInfo => idInfo.id !== allocatedId));
-        await refreshData(); // Refresh data to update totalIds and remainingIds
-      } catch (error) {
-        console.error('Error during release:', error);
-        setErrorMessage(error instanceof Error ? error.message : 'Unknown error during release');
-        return;
-      }
-    }
-    console.log('Allocating new ID...');
-    try {
-      await handleClockIn(e, true);
-      // handleClockIn 内部已经处理了 allocatedId 的更新
-      console.log('New ID allocated successfully');
-      setErrorMessage('新 ID 已成功分配');
-      // Refresh data after allocation to ensure remainingIds is updated
-      await refreshData();
-    } catch (error) {
-      console.error('Error during allocation:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Unknown error during allocation');
     }
   };
 
@@ -228,7 +180,6 @@ export const useIdAllocation = () => {
     remainingIds,
     handleClockIn,
     handleClockOut,
-    handleReapply,
     handleClearAll,
     uploadEmployeePool,
   };

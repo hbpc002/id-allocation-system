@@ -1,0 +1,61 @@
+# 依赖和构建产物
+node_modules
+.next
+out
+
+# 版本控制
+.git
+.gitignore
+
+# 文档
+README.md
+
+# 环境变量
+.env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 测试和覆盖率
+coverage
+.nyc_output
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE和编辑器
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.temp
+
+# 数据库文件（将在容器中创建）
+employee_ids.db
+employee_ids.db-shm
+employee_ids.db-wal
+
+# 测试文件
+test_ids*.txt
+
+# 开发工具配置
+.codesandbox
+.devcontainer
+.kilocode
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

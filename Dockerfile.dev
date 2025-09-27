@@ -1,0 +1,37 @@
+# 开发环境Dockerfile
+FROM node:20-alpine
+
+# 安装必要的系统依赖
+RUN apk add --no-cache \
+    dumb-init \
+    git
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装特定版本的 pnpm
+RUN npm install -g pnpm@8
+
+# 复制依赖文件
+COPY package.json pnpm-lock.yaml ./
+
+# 安装所有依赖（包括开发依赖）
+RUN pnpm install --frozen-lockfile
+
+# 复制源代码
+COPY . .
+
+# 创建数据目录
+RUN mkdir -p /app/data
+
+# 暴露端口
+EXPOSE 3000
+
+# 设置环境变量
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# 启动开发服务器
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["pnpm", "dev"]

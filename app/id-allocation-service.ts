@@ -25,7 +25,6 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
     db.prepare('DELETE FROM allocated_ids WHERE id = ?').run(existingAllocation.id);
   }
   
-  const currentlyAllocated = getCurrentlyAllocatedIds();
   // Get an available ID from the employee_pool that is not currently allocated
   const availableIdRow = db.prepare(`
     SELECT id FROM employee_pool

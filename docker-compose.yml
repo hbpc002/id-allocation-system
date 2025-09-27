@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextjs-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+    volumes:
+      - db_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/id-allocation"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+  # 开发环境服务
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: nextjs-app-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATA_DIR=/app/data
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - db_data_dev:/app/data
+    restart: unless-stopped
+    networks:
+      - app-network
+    profiles:
+      - dev
+
+volumes:
+  db_data:
+    driver: local
+  db_data_dev:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

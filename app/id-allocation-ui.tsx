@@ -16,7 +16,6 @@ const IdAllocationUI = () => {
     remainingIds,
     handleClockIn,
     handleClockOut,
-    handleReapply,
     handleClearAll,
     uploadEmployeePool,
   } = useIdAllocation();
@@ -78,7 +77,6 @@ const IdAllocationUI = () => {
         <IdAllocationForm
           onClockIn={handleClockIn}
           onClockOut={handleClockOut}
-          onReapply={handleReapply}
           onClearAll={handleClearAll}
           onUploadPool={uploadEmployeePool}
           isLoggedIn={isLoggedIn}

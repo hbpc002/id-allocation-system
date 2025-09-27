@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import db from '../../../db';
 
+// 定义数据库查询结果的类型
+interface PasswordResult {
+  value: string;
+}
+
 export async function GET() {
   try {
     console.log('Received request to fetch login password');
     // Query the database for the login password
-    const result = db.prepare('SELECT value FROM passwords WHERE key = ?').get('login_password');
+    const result = db.prepare('SELECT value FROM passwords WHERE key = ?').get('login_password') as PasswordResult | undefined;
     
     if (!result) {
       console.error('No password found in database for key: login_password');

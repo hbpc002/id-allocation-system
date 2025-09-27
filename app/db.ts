@@ -1,10 +1,22 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'employee_ids.db');
+// 确定数据目录路径，优先使用环境变量，否则使用默认路径
+const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+
+// 确保数据目录存在
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const dbPath = path.join(dataDir, 'employee_ids.db');
 const db = new Database(dbPath);
 
-// db.pragma('journal_mode = WAL'); // Commented out to avoid disk I/O error
+// 在Docker环境中启用WAL模式以提高性能
+if (process.env.NODE_ENV === 'production') {
+  db.pragma('journal_mode = WAL');
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS allocated_ids (

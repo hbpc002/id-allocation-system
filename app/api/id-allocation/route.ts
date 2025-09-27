@@ -1,5 +1,5 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { allocateId, releaseId, cleanupExpiredIds, getCurrentlyAllocatedIds, clearAllIds } from '../../id-allocation-service';
+import { NextResponse } from 'next/server';
+import { allocateId, releaseId, cleanupExpiredIds, clearAllIds } from '../../id-allocation-service';
 import db from '../../db';
 
 export async function GET(request: Request) {
@@ -21,7 +21,6 @@ export async function GET(request: Request) {
   const clientAllocatedIdRow = db.prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
   const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
   
-  const currentlyAllocated = getCurrentlyAllocatedIds();
   // Get all allocated IDs with their IP addresses directly from the database
   const allocatedRows = db.prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
   const allocatedIdsWithIPs = allocatedRows.map(row => ({
@@ -115,7 +114,7 @@ export async function POST(request: Request) {
     }
     // If still unknown or localhost, try to get remoteAddress from NextRequest
     if (clientIp === '127.0.0.1' || clientIp === '::1') {
-      const nextRequest = request as any;
+      const nextRequest = request as unknown as { socket?: { remoteAddress?: string } };
       if (nextRequest.socket && nextRequest.socket.remoteAddress) {
         clientIp = nextRequest.socket.remoteAddress;
       }
@@ -202,8 +201,9 @@ export async function POST(request: Request) {
       console.log('Invalid action:', action);
       return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in POST handler:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
