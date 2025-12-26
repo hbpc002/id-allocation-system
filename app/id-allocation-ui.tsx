@@ -16,12 +16,10 @@ const IdAllocationUI = () => {
     availableIds,
     disabledIds,
     allocatedIdsCount,
-    remainingIds,
     handleClockIn,
     handleClockOut,
     handleClearAll,
     uploadEmployeePool,
-    refreshData,
   } = useIdAllocation();
 
   const [viewMode, setViewMode] = useState<'user' | 'login' | 'admin'>('user');

@@ -366,7 +366,7 @@ const batchUpdateEmployeeIds = (ids: number[], action: 'enable' | 'disable' | 'd
 // 搜索工号
 const searchEmployeeIds = (query: string, status?: string) => {
   let sql = 'SELECT ep.id, ep.status, ep.createdAt, ep.updatedAt, ai.ipAddress FROM employee_pool ep LEFT JOIN allocated_ids ai ON ep.id = ai.id WHERE ep.id LIKE ?';
-  const params: any[] = [`%${query}%`];
+  const params: (string | number)[] = [`%${query}%`];
 
   if (status) {
     sql += ' AND ep.status = ?';

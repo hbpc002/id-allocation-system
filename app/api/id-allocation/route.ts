@@ -12,7 +12,11 @@ import {
   updateEmployeeIdStatus,
   batchUpdateEmployeeIds,
   searchEmployeeIds,
-  verifyAdminSession
+  verifyAdminSession,
+  verifyAdminPassword,
+  createAdminSession,
+  deleteAdminSession,
+  changeAdminPassword
 } from '../../id-allocation-service';
 import db from '../../db';
 
@@ -151,7 +155,6 @@ export async function POST(request: Request) {
       // Admin-only actions
       case 'adminLogin': {
         const { password } = await request.json();
-        const { verifyAdminPassword, createAdminSession } = require('../../id-allocation-service');
         if (verifyAdminPassword(password)) {
           const sessionId = createAdminSession();
           return NextResponse.json({ success: true, sessionId });
@@ -164,7 +167,6 @@ export async function POST(request: Request) {
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
         }
-        const { changeAdminPassword } = require('../../id-allocation-service');
         const success = changeAdminPassword(oldPassword, newPassword);
         if (success) {
           return NextResponse.json({ success: true });
@@ -180,7 +182,6 @@ export async function POST(request: Request) {
       case 'logout': {
         const sessionId = request.headers.get('x-admin-session');
         if (sessionId) {
-          const { deleteAdminSession } = require('../../id-allocation-service');
           deleteAdminSession(sessionId);
         }
         return NextResponse.json({ success: true });

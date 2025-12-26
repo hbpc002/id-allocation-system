@@ -7,13 +7,6 @@ interface AllocatedIdInfo {
   ipAddress: string;
 }
 
-interface PoolStats {
-  total: number;
-  available: number;
-  disabled: number;
-  allocated: number;
-}
-
 // Create a consistent date initialization to avoid hydration mismatch
 const getInitialDate = (): Date => {
   return new Date(Date.UTC(2000, 0, 1, 0, 0, 0));

@@ -28,7 +28,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
 
   // Import states
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<any>(null);
+  const [importResult, setImportResult] = useState<{ success: boolean; uploadedCount: number; failedCount: number; totalPoolIds: number; errors: string[] } | null>(null);
 
   // Manage states
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -84,7 +84,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
     if (adminSessionId) {
       fetchData();
     }
-  }, [adminSessionId]);
+  }, [adminSessionId, fetchData]);
 
   // Handle file import
   const handleImport = async () => {
@@ -376,7 +376,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
         ].map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
+            onClick={() => setActiveTab(tab.key as 'view' | 'import' | 'manage' | 'password')}
             className={`px-4 py-2 font-medium ${
               activeTab === tab.key
                 ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'

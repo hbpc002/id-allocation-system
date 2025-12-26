@@ -63,7 +63,7 @@ if (!existingPassword) {
 // Migration: Add updatedAt column if it doesn't exist (for backward compatibility)
 try {
   db.prepare('ALTER TABLE employee_pool ADD COLUMN updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP').run();
-} catch (e) {
+} catch {
   // Column already exists, ignore error
 }
 
