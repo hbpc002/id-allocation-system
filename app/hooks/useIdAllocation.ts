@@ -22,7 +22,6 @@ export const useIdAllocation = () => {
   const [availableIds, setAvailableIds] = useState<number>(0);
   const [disabledIds, setDisabledIds] = useState<number>(0);
   const [allocatedIdsCount, setAllocatedIdsCount] = useState<number>(0);
-  const remainingIds = availableIds;
 
   // Refresh allocated IDs and total pool count from the server
   const refreshData = async () => {
@@ -209,11 +208,9 @@ export const useIdAllocation = () => {
     availableIds,
     disabledIds,
     allocatedIdsCount,
-    remainingIds,
     handleClockIn,
     handleClockOut,
     handleClearAll,
     uploadEmployeePool,
-    refreshData,
   };
 };

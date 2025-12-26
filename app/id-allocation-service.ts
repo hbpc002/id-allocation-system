@@ -198,15 +198,6 @@ const deleteAdminSession = (sessionId: string): void => {
   getDb().prepare('DELETE FROM admin_sessions WHERE sessionId = ?').run(sessionId);
 };
 
-// 清理会话（删除过期会话，超过24小时）
-const cleanupExpiredSessions = (): void => {
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const result = getDb().prepare('DELETE FROM admin_sessions WHERE lastActivity < ?').run(twentyFourHoursAgo);
-  if (result.changes > 0) {
-    console.log(`Cleaned up ${result.changes} expired admin sessions`);
-  }
-};
-
 // ==================== 工号管理功能 ====================
 
 // 获取所有工号信息（包含状态）
