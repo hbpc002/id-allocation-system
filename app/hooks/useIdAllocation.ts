@@ -7,10 +7,15 @@ interface AllocatedIdInfo {
   ipAddress: string;
 }
 
+interface PoolStats {
+  total: number;
+  available: number;
+  disabled: number;
+  allocated: number;
+}
+
 // Create a consistent date initialization to avoid hydration mismatch
 const getInitialDate = (): Date => {
-  // Use a fixed date in the past to ensure server and client start with the same value
-  // This will be updated immediately on the client side
   return new Date(Date.UTC(2000, 0, 1, 0, 0, 0));
 };
 
@@ -21,7 +26,10 @@ export const useIdAllocation = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(getInitialDate());
   const [totalIds, setTotalIds] = useState<number>(0);
-  const remainingIds = totalIds - allocatedIds.length;
+  const [availableIds, setAvailableIds] = useState<number>(0);
+  const [disabledIds, setDisabledIds] = useState<number>(0);
+  const [allocatedIdsCount, setAllocatedIdsCount] = useState<number>(0);
+  const remainingIds = availableIds;
 
   // Refresh allocated IDs and total pool count from the server
   const refreshData = async () => {
@@ -34,6 +42,15 @@ export const useIdAllocation = () => {
       }
       if (data.totalPoolIds !== undefined) {
         setTotalIds(data.totalPoolIds);
+      }
+      if (data.availableIds !== undefined) {
+        setAvailableIds(data.availableIds);
+      }
+      if (data.disabledIds !== undefined) {
+        setDisabledIds(data.disabledIds);
+      }
+      if (data.allocatedIdsCount !== undefined) {
+        setAllocatedIdsCount(data.allocatedIdsCount);
       }
       if (data.clientAllocatedId !== undefined) {
         setAllocatedId(data.clientAllocatedId);
@@ -50,12 +67,19 @@ export const useIdAllocation = () => {
 
     // Update current time every second
     const interval = setInterval(() => {
-      // Create date object - it will already be in China timezone due to Docker settings
       const now = new Date();
       setCurrentTime(now);
     }, 1000);
 
-    return () => clearInterval(interval);
+    // Auto refresh data every 10 seconds
+    const refreshInterval = setInterval(() => {
+      refreshData();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Clock In: Allocate a new ID
@@ -76,11 +100,12 @@ export const useIdAllocation = () => {
         setAllocatedId(data.id);
         setUniqueSessionId(data.uniqueId);
         setErrorMessage(null);
-        // Use the ipAddress from the response, not a potentially undefined variable
         const newAllocatedIds = [...allocatedIds, { id: data.id, ipAddress: data.ipAddress }];
         setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) =>
           self.findIndex(t => t.id === idInfo.id) === index
         ));
+        // Refresh stats
+        await refreshData();
       } else {
         setErrorMessage(data.error || 'Allocation failed');
       }
@@ -104,8 +129,8 @@ export const useIdAllocation = () => {
         setAllocatedId(null);
         setUniqueSessionId(null);
         setErrorMessage(null);
-        // Remove from local state
         setAllocatedIds(allocatedIds.filter(idInfo => idInfo.id !== allocatedId));
+        await refreshData();
       } else {
         setErrorMessage(data.error || 'Release failed');
       }
@@ -114,12 +139,15 @@ export const useIdAllocation = () => {
     }
   };
 
-  // Clear All: Reset all allocated IDs
-  const handleClearAll = async () => {
+  // Clear All: Reset all allocated IDs (requires admin)
+  const handleClearAll = async (adminSessionId: string) => {
     try {
       const response = await fetch('/api/id-allocation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
         body: JSON.stringify({ action: 'clearAll' }),
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -129,6 +157,7 @@ export const useIdAllocation = () => {
         setAllocatedId(null);
         setUniqueSessionId(null);
         setErrorMessage(null);
+        await refreshData();
       } else {
         setErrorMessage(data.error || 'Clear all failed');
       }
@@ -137,27 +166,32 @@ export const useIdAllocation = () => {
     }
   };
 
-  // Upload Employee Pool from a text file
-  const uploadEmployeePool = async (file: File) => {
+  // Upload Employee Pool from a text file (requires admin)
+  const uploadEmployeePool = async (file: File, adminSessionId: string) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const fileContent = e.target?.result as string;
       try {
         const response = await fetch('/api/id-allocation', {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
+          headers: {
+            'Content-Type': 'text/plain',
+            'x-admin-session': adminSessionId
+          },
           body: fileContent,
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success) {
           setErrorMessage(null);
-          alert(`Successfully uploaded ${data.uploadedCount} IDs.`);
-          // Update totalIds immediately from response
-          if (data.totalPoolIds !== undefined) {
-            setTotalIds(data.totalPoolIds);
+          let message = `成功导入 ${data.uploadedCount} 个工号。`;
+          if (data.failedCount > 0) {
+            message += `\n失败 ${data.failedCount} 个。`;
+            if (data.errors && data.errors.length > 0) {
+              message += `\n错误详情:\n${data.errors.slice(0, 5).join('\n')}${data.errors.length > 5 ? '\n...' : ''}`;
+            }
           }
-          // Refresh data to ensure consistency (e.g., allocatedIds)
+          alert(message);
           await refreshData();
         } else {
           setErrorMessage(data.error || 'Upload failed');
@@ -179,10 +213,14 @@ export const useIdAllocation = () => {
     errorMessage,
     currentTime,
     totalIds,
+    availableIds,
+    disabledIds,
+    allocatedIdsCount,
     remainingIds,
     handleClockIn,
     handleClockOut,
     handleClearAll,
     uploadEmployeePool,
+    refreshData,
   };
 };
