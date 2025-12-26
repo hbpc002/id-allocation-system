@@ -1,22 +1,22 @@
-import db from './db';
+import getDb from './db';
 
 // ==================== 工号池管理功能 ====================
 
 // 获取当前已分配的工号列表
 const getCurrentlyAllocatedIds = () => {
-  const rows = db.prepare('SELECT id FROM allocated_ids').all() as { id: number }[];
+  const rows = getDb().prepare('SELECT id FROM allocated_ids').all() as { id: number }[];
   return new Set(rows.map(row => row.id));
 };
 
 // 获取工号池统计信息
 const getPoolStats = () => {
-  const total = db.prepare('SELECT COUNT(*) as count FROM employee_pool').get() as { count: number };
-  const available = db.prepare(`
+  const total = getDb().prepare('SELECT COUNT(*) as count FROM employee_pool').get() as { count: number };
+  const available = getDb().prepare(`
     SELECT COUNT(*) as count FROM employee_pool
     WHERE status = 'available' AND id NOT IN (SELECT id FROM allocated_ids)
   `).get() as { count: number };
-  const disabled = db.prepare('SELECT COUNT(*) as count FROM employee_pool WHERE status = \'disabled\'').get() as { count: number };
-  const allocated = db.prepare('SELECT COUNT(*) as count FROM allocated_ids').get() as { count: number };
+  const disabled = getDb().prepare('SELECT COUNT(*) as count FROM employee_pool WHERE status = \'disabled\'').get() as { count: number };
+  const allocated = getDb().prepare('SELECT COUNT(*) as count FROM allocated_ids').get() as { count: number };
 
   return {
     total: total.count,
@@ -31,7 +31,7 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
   console.log(`ID allocation requested for IP: ${ipAddress}, forceNewAllocation: ${forceNewAllocation}`);
 
   // Check if this IP already has an allocated ID
-  const existingAllocation = db.prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(ipAddress) as { id: number } | undefined;
+  const existingAllocation = getDb().prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(ipAddress) as { id: number } | undefined;
 
   if (existingAllocation && !forceNewAllocation) {
     console.log(`IP ${ipAddress} already has allocated ID ${existingAllocation.id}. Returning existing allocation.`);
@@ -41,11 +41,11 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
   // If forceNewAllocation is true, release the existing allocation first
   if (existingAllocation && forceNewAllocation) {
     console.log(`Force allocation requested for IP ${ipAddress}. Releasing existing ID ${existingAllocation.id} first.`);
-    db.prepare('DELETE FROM allocated_ids WHERE id = ?').run(existingAllocation.id);
+    getDb().prepare('DELETE FROM allocated_ids WHERE id = ?').run(existingAllocation.id);
   }
 
   // Get an available ID from the employee_pool that is not currently allocated and is enabled
-  const availableIdRow = db.prepare(`
+  const availableIdRow = getDb().prepare(`
     SELECT id FROM employee_pool
     WHERE status = 'available'
       AND id NOT IN (SELECT id FROM allocated_ids)
@@ -70,9 +70,9 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
 
   console.log(`Allocating ID: ${availableId}, IP: ${ipAddress}`);
 
-  db.transaction(() => {
+  getDb().transaction(() => {
     // Insert into allocated_ids
-    db.prepare(
+    getDb().prepare(
       'INSERT INTO allocated_ids (id, uniqueSessionId, allocationTime, ipAddress, expiresAt) VALUES (?, ?, ?, ?, ?)'
     ).run(
       availableId,
@@ -83,7 +83,7 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
     );
 
     // Update employee_pool status to allocated
-    db.prepare(
+    getDb().prepare(
       'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
     ).run('allocated', availableId);
   })();
@@ -96,16 +96,16 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
 const releaseId = (id: number) => {
   console.log(`Releasing ID: ${id}`);
 
-  db.transaction(() => {
+  getDb().transaction(() => {
     // Delete from allocated_ids
-    const info = db.prepare('DELETE FROM allocated_ids WHERE id = ?').run(id);
+    const info = getDb().prepare('DELETE FROM allocated_ids WHERE id = ?').run(id);
     if (info.changes === 0) {
       console.log(`ID ${id} is not allocated or already released`);
       throw new Error('ID is not allocated or already released');
     }
 
     // Update employee_pool status back to available
-    db.prepare(
+    getDb().prepare(
       'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
     ).run('available', id);
   })();
@@ -118,16 +118,16 @@ const cleanupExpiredIds = () => {
   const now = new Date();
   const nowISO = now.toISOString();
 
-  const expiredRows = db.prepare('SELECT id FROM allocated_ids WHERE expiresAt <= ?').all() as { id: number }[];
+  const expiredRows = getDb().prepare('SELECT id FROM allocated_ids WHERE expiresAt <= ?').all() as { id: number }[];
 
   if (expiredRows.length > 0) {
-    db.transaction(() => {
+    getDb().transaction(() => {
       // Delete from allocated_ids
-      db.prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(nowISO);
+      getDb().prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(nowISO);
 
       // Update employee_pool status for expired IDs
       expiredRows.forEach(row => {
-        db.prepare(
+        getDb().prepare(
           'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
         ).run('available', row.id);
       });
@@ -139,16 +139,16 @@ const cleanupExpiredIds = () => {
 
 // 清空所有已分配工号
 const clearAllIds = () => {
-  db.transaction(() => {
+  getDb().transaction(() => {
     // Get all allocated IDs before clearing
-    const allocatedRows = db.prepare('SELECT id FROM allocated_ids').all() as { id: number }[];
+    const allocatedRows = getDb().prepare('SELECT id FROM allocated_ids').all() as { id: number }[];
 
     // Clear all allocated IDs
-    db.prepare('DELETE FROM allocated_ids').run();
+    getDb().prepare('DELETE FROM allocated_ids').run();
 
     // Reset all employee_pool status to available
     allocatedRows.forEach(row => {
-      db.prepare(
+      getDb().prepare(
         'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
       ).run('available', row.id);
     });
@@ -161,7 +161,7 @@ const clearAllIds = () => {
 
 // 验证管理员密码
 const verifyAdminPassword = (password: string): boolean => {
-  const result = db.prepare('SELECT value FROM passwords WHERE key = ?').get('login_password') as { value: string } | undefined;
+  const result = getDb().prepare('SELECT value FROM passwords WHERE key = ?').get('login_password') as { value: string } | undefined;
   return result?.value === password;
 };
 
@@ -171,23 +171,23 @@ const changeAdminPassword = (oldPassword: string, newPassword: string): boolean 
     return false;
   }
 
-  db.prepare('UPDATE passwords SET value = ? WHERE key = ?').run(newPassword, 'login_password');
+  getDb().prepare('UPDATE passwords SET value = ? WHERE key = ?').run(newPassword, 'login_password');
   return true;
 };
 
 // 创建管理员会话
 const createAdminSession = (): string => {
   const sessionId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
-  db.prepare('INSERT INTO admin_sessions (sessionId) VALUES (?)').run(sessionId);
+  getDb().prepare('INSERT INTO admin_sessions (sessionId) VALUES (?)').run(sessionId);
   return sessionId;
 };
 
 // 验证管理员会话
 const verifyAdminSession = (sessionId: string): boolean => {
-  const result = db.prepare('SELECT sessionId FROM admin_sessions WHERE sessionId = ?').get(sessionId);
+  const result = getDb().prepare('SELECT sessionId FROM admin_sessions WHERE sessionId = ?').get(sessionId);
   if (result) {
     // Update last activity
-    db.prepare('UPDATE admin_sessions SET lastActivity = CURRENT_TIMESTAMP WHERE sessionId = ?').run(sessionId);
+    getDb().prepare('UPDATE admin_sessions SET lastActivity = CURRENT_TIMESTAMP WHERE sessionId = ?').run(sessionId);
     return true;
   }
   return false;
@@ -195,13 +195,13 @@ const verifyAdminSession = (sessionId: string): boolean => {
 
 // 删除管理员会话
 const deleteAdminSession = (sessionId: string): void => {
-  db.prepare('DELETE FROM admin_sessions WHERE sessionId = ?').run(sessionId);
+  getDb().prepare('DELETE FROM admin_sessions WHERE sessionId = ?').run(sessionId);
 };
 
 // 清理会话（删除过期会话，超过24小时）
 const cleanupExpiredSessions = (): void => {
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const result = db.prepare('DELETE FROM admin_sessions WHERE lastActivity < ?').run(twentyFourHoursAgo);
+  const result = getDb().prepare('DELETE FROM admin_sessions WHERE lastActivity < ?').run(twentyFourHoursAgo);
   if (result.changes > 0) {
     console.log(`Cleaned up ${result.changes} expired admin sessions`);
   }
@@ -211,7 +211,7 @@ const cleanupExpiredSessions = (): void => {
 
 // 获取所有工号信息（包含状态）
 const getAllEmployeeIds = () => {
-  const rows = db.prepare(`
+  const rows = getDb().prepare(`
     SELECT
       ep.id,
       ep.status,
@@ -244,11 +244,11 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
   let success = 0;
   let failed = 0;
 
-  db.transaction(() => {
+  getDb().transaction(() => {
     ids.forEach(id => {
       try {
         // Check if ID already exists
-        const existing = db.prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
+        const existing = getDb().prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
         if (existing) {
           errors.push(`工号 ${id} 已存在`);
           failed++;
@@ -256,7 +256,7 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
         }
 
         // Insert new ID
-        db.prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
+        getDb().prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
         success++;
       } catch (error) {
         errors.push(`工号 ${id} 导入失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -271,12 +271,12 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
 // 添加单个工号
 const addEmployeeId = (id: number): { success: boolean; error?: string } => {
   try {
-    const existing = db.prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
+    const existing = getDb().prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
     if (existing) {
       return { success: false, error: `工号 ${id} 已存在` };
     }
 
-    db.prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
+    getDb().prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
     return { success: true };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -287,12 +287,12 @@ const addEmployeeId = (id: number): { success: boolean; error?: string } => {
 const deleteEmployeeId = (id: number): { success: boolean; error?: string } => {
   try {
     // Check if ID is currently allocated
-    const allocated = db.prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
+    const allocated = getDb().prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
     if (allocated) {
       return { success: false, error: `工号 ${id} 正在使用中，无法删除` };
     }
 
-    const result = db.prepare('DELETE FROM employee_pool WHERE id = ?').run(id);
+    const result = getDb().prepare('DELETE FROM employee_pool WHERE id = ?').run(id);
     if (result.changes === 0) {
       return { success: false, error: `工号 ${id} 不存在` };
     }
@@ -307,20 +307,20 @@ const deleteEmployeeId = (id: number): { success: boolean; error?: string } => {
 const updateEmployeeIdStatus = (id: number, status: 'available' | 'disabled'): { success: boolean; error?: string } => {
   try {
     // Check if ID exists
-    const existing = db.prepare('SELECT id, status FROM employee_pool WHERE id = ?').get(id);
+    const existing = getDb().prepare('SELECT id, status FROM employee_pool WHERE id = ?').get(id);
     if (!existing) {
       return { success: false, error: `工号 ${id} 不存在` };
     }
 
     // Cannot enable a disabled ID if it's already allocated
     if (status === 'available') {
-      const allocated = db.prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
+      const allocated = getDb().prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
       if (allocated) {
         return { success: false, error: `工号 ${id} 正在使用中，无法启用` };
       }
     }
 
-    db.prepare('UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(status, id);
+    getDb().prepare('UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(status, id);
     return { success: true };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -333,7 +333,7 @@ const batchUpdateEmployeeIds = (ids: number[], action: 'enable' | 'disable' | 'd
   let success = 0;
   let failed = 0;
 
-  db.transaction(() => {
+  getDb().transaction(() => {
     ids.forEach(id => {
       let result: { success: boolean; error?: string };
 
@@ -375,7 +375,7 @@ const searchEmployeeIds = (query: string, status?: string) => {
 
   sql += ' ORDER BY ep.id';
 
-  return db.prepare(sql).all(...params) as Array<{
+  return getDb().prepare(sql).all(...params) as Array<{
     id: number;
     status: string;
     createdAt: string;
@@ -383,10 +383,6 @@ const searchEmployeeIds = (query: string, status?: string) => {
     ipAddress: string | null;
   }>;
 };
-
-// Initial cleanup on service start
-cleanupExpiredIds();
-cleanupExpiredSessions();
 
 export {
   // 工号分配相关

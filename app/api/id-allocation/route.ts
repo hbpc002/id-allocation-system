@@ -18,7 +18,7 @@ import {
   deleteAdminSession,
   changeAdminPassword
 } from '../../id-allocation-service';
-import db from '../../db';
+import getDb from '../../db';
 
 // Helper function to extract client IP
 function getClientIp(request: Request): string {
@@ -61,11 +61,11 @@ export async function GET(request: Request) {
   const clientIp = getClientIp(request);
 
   // Get currently allocated IDs for the client IP
-  const clientAllocatedIdRow = db.prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
+  const clientAllocatedIdRow = getDb().prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
   const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
 
   // Get all allocated IDs with their IP addresses directly from the database
-  const allocatedRows = db.prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
+  const allocatedRows = getDb().prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
   const allocatedIdsWithIPs = allocatedRows.map(row => ({
     id: row.id,
     ipAddress: row.ipAddress
