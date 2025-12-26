@@ -1,27 +1,32 @@
 # 工号分配系统 (Employee ID Allocation System)
 
-一个基于 Next.js 和 SQLite 的工号分配管理系统，支持工号申请、释放、管理员管理和工号池管理。
+一个基于 Next.js 15.2.0 和 SQLite 的工号分配管理系统，支持工号申请、释放、管理员管理和工号池管理。
 
 ## ✨ 功能特性
 
 ### 用户功能
 - **工号申请**: 用户可以点击"申请工号"按钮获取可用工号
 - **工号释放**: 用户可以点击"释放工号"按钮归还工号
-- **实时滚动**: 已分配工号列表实时滚动显示，悬停可暂停
-- **IP 记录**: 系统记录用户的 IP 地址和分配时间
-- **自动过期**: 工号在当天 24:00 自动释放
+- **工号重申请**: 支持强制重新分配新工号（释放旧工号后分配新的）
+- **实时滚动**: 已分配工号列表实时滚动显示（15秒循环动画），悬停可暂停
+- **IP 记录**: 系统记录用户的 IP 地址和分配时间（支持多种代理头部）
+- **自动过期**: 工号在当天 23:59:59 自动释放
 - **状态统计**: 显示工号总数、可用、已分配、已停用数量
+- **实时时间**: 显示当前系统时间
 
 ### 管理员功能
 - **管理员登录**: 安全的管理员登录系统（默认密码: root123）
+- **会话管理**:
+  - 24小时会话过期自动清理
+  - 会话活动时间更新
+  - 本地存储会话状态
 - **工号管理**:
-  - 查看所有工号状态（可用/已分配/已停用）
-  - 单个工号添加、删除、启用、停用
-  - 批量导入工号（支持文本文件）
-  - 批量操作（启用、停用、删除）
-  - 工号搜索功能
-- **密码管理**: 修改管理员密码
-- **会话管理**: 自动会话验证和 24 小时过期清理
+  - **查看工号**: 表格展示、搜索、多选、实时刷新
+  - **批量导入**: 上传 `.txt` 文件，每行一个工号，自动去重
+  - **单个管理**: 添加、删除、启用、停用单个工号
+  - **批量操作**: 选中多个工号进行批量启用、停用、删除
+  - **清空操作**: 一键清空所有已分配工号
+- **密码管理**: 安全的密码修改界面（需验证旧密码）
 
 ## 📁 项目结构
 
@@ -196,6 +201,12 @@ npm start
 ### GET /api/id-allocation
 获取当前系统状态（无需认证）
 
+**功能**:
+- 自动清理过期工号
+- 获取当前客户端 IP 对应的工号
+- 返回所有已分配工号列表（含 IP）
+- 返回工号池统计信息
+
 **响应示例**:
 ```json
 {
@@ -218,23 +229,27 @@ npm start
 ```json
 { "action": "allocate", "forceNewAllocation": false }
 ```
+- `forceNewAllocation`: 可选，设为 `true` 时会释放旧工号并分配新的
+- **无需认证**
 
 #### 2. 释放工号 (JSON)
 ```json
 { "action": "release", "id": 644100 }
 ```
+- **无需认证**
 
 #### 3. 管理员登录 (JSON)
 ```json
 { "action": "adminLogin", "password": "root123" }
 ```
-**响应**: `{ "success": true, "sessionId": "..." }`
+**响应**: `{ "success": true, "sessionId": "..." }` 或 `{ "success": false, "error": "..." }`
 
 #### 4. 验证会话 (JSON)
 ```json
 { "action": "verifySession" }
 ```
 **Header**: `x-admin-session: <sessionId>`
+**响应**: `{ "success": true/false }`
 
 #### 5. 修改密码 (JSON)
 ```json
@@ -244,24 +259,37 @@ npm start
 
 #### 6. 批量导入 (text/plain)
 **Content-Type**: `text/plain`
-**Body**:
+**Body**: 每行一个工号
 ```
 644100
 644101
 644102
 ```
 **Header**: `x-admin-session: <sessionId>`
+**响应**:
+```json
+{
+  "success": true,
+  "uploadedCount": 3,
+  "failedCount": 0,
+  "totalPoolIds": 103,
+  "errors": []
+}
+```
 
 #### 7. 获取所有工号 (JSON)
 ```json
 { "action": "getAllIds" }
 ```
 **Header**: `x-admin-session: <sessionId>`
+**响应**: 包含所有工号的详细信息（状态、IP、时间等）
 
 #### 8. 获取统计 (JSON)
 ```json
 { "action": "getPoolStats" }
 ```
+**无需认证**
+**响应**: `{ "success": true, "data": { total, available, disabled, allocated } }`
 
 #### 9. 添加单个工号 (JSON)
 ```json
@@ -274,12 +302,14 @@ npm start
 { "action": "deleteId", "id": 644100 }
 ```
 **Header**: `x-admin-session: <sessionId>`
+**注意**: 正在使用的工号无法删除
 
 #### 11. 更新工号状态 (JSON)
 ```json
 { "action": "updateIdStatus", "id": 644100, "status": "available" }
 ```
 **Header**: `x-admin-session: <sessionId>`
+**status**: `available` (启用) 或 `disabled` (停用)
 
 #### 12. 批量操作 (JSON)
 ```json
@@ -295,11 +325,12 @@ npm start
 **Header**: `x-admin-session: <sessionId>`
 **status**: 可选，`available` | `allocated` | `disabled`
 
-#### 14. 清空所有 (JSON)
+#### 14. 清空所有已分配 (JSON)
 ```json
 { "action": "clearAll" }
 ```
 **Header**: `x-admin-session: <sessionId>`
+**功能**: 清空所有已分配工号，重置为可用状态
 
 #### 15. 登出 (JSON)
 ```json
@@ -309,15 +340,30 @@ npm start
 
 ## 🛠️ 技术栈
 
-| 类别 | 技术 | 版本 |
-|------|------|------|
-| 前端框架 | Next.js | 15.2.0 |
-| UI 库 | React | 19.0.0 |
-| 语言 | TypeScript | 5.x |
-| 样式 | Tailwind CSS | 3.4.1 |
-| 数据库 | better-sqlite3 | 12.2.0 |
-| 图标 | react-icons | 5.5.0 |
-| 工具 | uuid | 13.0.0 |
+| 类别 | 技术 | 版本 | 用途 |
+|------|------|------|------|
+| 前端框架 | Next.js | 15.2.0 | React 框架 |
+| UI 库 | React | 19.0.0 | UI 组件 |
+| 语言 | TypeScript | 5.x | 类型系统 |
+| 样式 | Tailwind CSS | 3.4.1 | CSS 框架 |
+| 数据库 | better-sqlite3 | 12.2.0 | SQLite 数据库 |
+| 图标 | react-icons | 5.5.0 | 图标库 |
+| 工具 | uuid | 13.0.0 | 唯一 ID 生成 |
+
+## 📂 核心文件说明
+
+| 文件 | 说明 |
+|------|------|
+| `app/db.ts` | 数据库初始化，创建表结构，插入默认数据 |
+| `app/id-allocation-service.ts` | 业务逻辑服务层，包含所有核心功能 |
+| `app/api/id-allocation/route.ts` | API 路由，统一处理所有请求 |
+| `app/id-allocation-ui.tsx` | 主 UI 组件，管理视图切换 |
+| `app/hooks/useIdAllocation.ts` | 用户界面状态管理 Hook |
+| `app/components/AdminPanel.tsx` | 管理员面板组件 |
+| `app/components/IdAllocationForm.tsx` | 用户操作表单组件 |
+| `app/components/IdAllocationStatus.tsx` | 状态统计卡片组件 |
+| `app/components/IdAllocationList.tsx` | 工号列表组件 |
+| `data/employee_ids.db` | SQLite 数据库文件 |
 
 ## 📝 默认配置
 
@@ -327,18 +373,23 @@ npm start
 | 数据库位置 | `data/employee_ids.db` | 自动创建 |
 | 工号过期时间 | 当天 23:59:59 | 自动清理 |
 | 会话过期时间 | 24 小时 | 自动清理 |
-| 滚动动画时长 | 15秒 | 可在 CSS 修改 |
-| 自动刷新间隔 | 10秒 | 可在 Hook 修改 |
+| 滚动动画时长 | 15秒 | 可在 `app/globals.css` 修改 |
+| 自动刷新间隔 | 10秒 | 可在 `app/hooks/useIdAllocation.ts` 修改 |
+| 服务器端口 | 3000 | 可在 `package.json` 修改 |
 
 ## 🔄 启动流程
 
 系统启动时会自动执行：
 1. 创建数据目录 `data/`
 2. 创建数据库表（如果不存在）
+   - `allocated_ids` - 已分配工号表
+   - `employee_pool` - 工号池表
+   - `passwords` - 密码存储表
+   - `admin_sessions` - 管理员会话表
 3. 插入默认管理员密码（如果不存在）
-4. 清理过期工号
-5. 清理过期会话
-6. 数据库迁移（添加缺失字段）
+4. 清理过期工号（`allocated_ids` 中 `expiresAt` 过期的记录）
+5. 清理过期会话（24 小时未活动的会话）
+6. 数据库迁移（添加缺失字段，如 `updatedAt`）
 
 ## 🐛 故障排除
 
