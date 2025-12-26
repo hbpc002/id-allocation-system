@@ -123,8 +123,9 @@ export async function POST(request: Request) {
     }
   }
 
-  // Parse JSON for other actions
-  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status } = await request.json();
+  // Parse JSON for other actions - only once!
+  const body = await request.json();
+  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status, password, operation } = body;
   const ipAddress = getClientIp(request);
 
   console.log('Received action:', action);
@@ -154,7 +155,6 @@ export async function POST(request: Request) {
 
       // Admin-only actions
       case 'adminLogin': {
-        const { password } = await request.json();
         if (verifyAdminPassword(password)) {
           const sessionId = createAdminSession();
           return NextResponse.json({ success: true, sessionId });
@@ -242,7 +242,6 @@ export async function POST(request: Request) {
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
         }
-        const { operation } = await request.json();
         const result = batchUpdateEmployeeIds(ids, operation);
         return NextResponse.json({ success: true, data: result });
       }
