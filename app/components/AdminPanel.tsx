@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface EmployeeId {
   id: number;
@@ -41,7 +41,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [idsRes, statsRes] = await Promise.all([
@@ -78,7 +78,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminSessionId]);
 
   useEffect(() => {
     if (adminSessionId) {
@@ -581,7 +581,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                 <ul className="list-disc list-inside space-y-1">
                   <li>每行一个工号（纯数字）</li>
                   <li>重复的工号会被自动跳过</li>
-                  <li>导入后状态默认为"可用"</li>
+                  <li>导入后状态默认为可用</li>
                 </ul>
               </div>
             </div>
