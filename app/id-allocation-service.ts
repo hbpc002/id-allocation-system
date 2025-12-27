@@ -115,25 +115,32 @@ const releaseId = (id: number) => {
 
 // 清理过期工号
 const cleanupExpiredIds = () => {
-  const now = new Date();
-  const nowISO = now.toISOString();
+  try {
+    const now = new Date();
+    const nowISO = now.toISOString();
+    console.log('[cleanupExpiredIds] Current time:', nowISO);
 
-  const expiredRows = getDb().prepare('SELECT id FROM allocated_ids WHERE expiresAt <= ?').all() as { id: number }[];
+    const expiredRows = getDb().prepare('SELECT id FROM allocated_ids WHERE expiresAt <= ?').all(nowISO) as { id: number }[];
+    console.log('[cleanupExpiredIds] Found expired rows:', expiredRows.length);
 
-  if (expiredRows.length > 0) {
-    getDb().transaction(() => {
-      // Delete from allocated_ids
-      getDb().prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(nowISO);
+    if (expiredRows.length > 0) {
+      getDb().transaction(() => {
+        // Delete from allocated_ids
+        getDb().prepare('DELETE FROM allocated_ids WHERE expiresAt <= ?').run(nowISO);
 
-      // Update employee_pool status for expired IDs
-      expiredRows.forEach(row => {
-        getDb().prepare(
-          'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
-        ).run('available', row.id);
-      });
-    })();
+        // Update employee_pool status for expired IDs
+        expiredRows.forEach(row => {
+          getDb().prepare(
+            'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+          ).run('available', row.id);
+        });
+      })();
 
-    console.log(`Cleaned up ${expiredRows.length} expired IDs`);
+      console.log(`Cleaned up ${expiredRows.length} expired IDs`);
+    }
+  } catch (error) {
+    console.error('[cleanupExpiredIds] Error:', error);
+    throw error;
   }
 };
 

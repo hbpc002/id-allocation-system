@@ -57,23 +57,35 @@ async function verifyAdminAuth(request: Request): Promise<boolean> {
 
 export async function GET(request: Request) {
   try {
-    cleanupExpiredIds(); // Clean up expired IDs on every GET request to ensure fresh data
+    console.log('GET request started');
+
+    // Clean up expired IDs on every GET request to ensure fresh data
+    console.log('Calling cleanupExpiredIds...');
+    cleanupExpiredIds();
+    console.log('cleanupExpiredIds completed');
 
     const clientIp = getClientIp(request);
+    console.log('Client IP:', clientIp);
 
     // Get currently allocated IDs for the client IP
+    console.log('Querying client allocated ID...');
     const clientAllocatedIdRow = getDb().prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
     const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
+    console.log('Client allocated ID:', clientAllocatedId);
 
     // Get all allocated IDs with their IP addresses directly from the database
+    console.log('Querying all allocated IDs...');
     const allocatedRows = getDb().prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
     const allocatedIdsWithIPs = allocatedRows.map(row => ({
       id: row.id,
       ipAddress: row.ipAddress
     }));
+    console.log('Allocated IDs count:', allocatedIdsWithIPs.length);
 
     // Get pool statistics
+    console.log('Getting pool stats...');
     const poolStats = getPoolStats();
+    console.log('Pool stats:', poolStats);
 
     return NextResponse.json({
       allocatedIds: allocatedIdsWithIPs,
