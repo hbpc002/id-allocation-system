@@ -44,7 +44,9 @@ export const useIdAllocation = () => {
       if (data.allocatedIdsCount !== undefined) {
         setAllocatedIdsCount(data.allocatedIdsCount);
       }
-      if (data.clientAllocatedId !== undefined) {
+      // Only update allocatedId if the API returns a valid ID
+      // This prevents overwriting a locally set ID with null from API
+      if (data.clientAllocatedId !== undefined && data.clientAllocatedId !== null) {
         setAllocatedId(data.clientAllocatedId);
       }
     } catch (error) {
@@ -92,12 +94,28 @@ export const useIdAllocation = () => {
         setAllocatedId(data.id);
         setUniqueSessionId(data.uniqueId);
         setErrorMessage(null);
+        // Update allocatedIds list
         const newAllocatedIds = [...allocatedIds, { id: data.id, ipAddress: data.ipAddress }];
         setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) =>
           self.findIndex(t => t.id === idInfo.id) === index
         ));
-        // Refresh stats
-        await refreshData();
+        // Update stats by calling refreshData but preserve the current allocatedId
+        const currentAllocatedId = data.id;
+        try {
+          const res = await fetch('/api/id-allocation');
+          if (res.ok) {
+            const statsData = await res.json();
+            if (statsData.totalPoolIds !== undefined) setTotalIds(statsData.totalPoolIds);
+            if (statsData.availableIds !== undefined) setAvailableIds(statsData.availableIds);
+            if (statsData.disabledIds !== undefined) setDisabledIds(statsData.disabledIds);
+            if (statsData.allocatedIdsCount !== undefined) setAllocatedIdsCount(statsData.allocatedIdsCount);
+            if (statsData.allocatedIds) setAllocatedIds(statsData.allocatedIds);
+            // Preserve the allocatedId we just set
+            setAllocatedId(currentAllocatedId);
+          }
+        } catch (e) {
+          console.error('Failed to refresh stats:', e);
+        }
       } else {
         setErrorMessage(data.error || 'Allocation failed');
       }
@@ -122,7 +140,21 @@ export const useIdAllocation = () => {
         setUniqueSessionId(null);
         setErrorMessage(null);
         setAllocatedIds(allocatedIds.filter(idInfo => idInfo.id !== allocatedId));
-        await refreshData();
+        // Update stats
+        try {
+          const res = await fetch('/api/id-allocation');
+          if (res.ok) {
+            const statsData = await res.json();
+            if (statsData.totalPoolIds !== undefined) setTotalIds(statsData.totalPoolIds);
+            if (statsData.availableIds !== undefined) setAvailableIds(statsData.availableIds);
+            if (statsData.disabledIds !== undefined) setDisabledIds(statsData.disabledIds);
+            if (statsData.allocatedIdsCount !== undefined) setAllocatedIdsCount(statsData.allocatedIdsCount);
+            if (statsData.allocatedIds) setAllocatedIds(statsData.allocatedIds);
+            // allocatedId is already set to null above
+          }
+        } catch (e) {
+          console.error('Failed to refresh stats:', e);
+        }
       } else {
         setErrorMessage(data.error || 'Release failed');
       }
@@ -149,7 +181,20 @@ export const useIdAllocation = () => {
         setAllocatedId(null);
         setUniqueSessionId(null);
         setErrorMessage(null);
-        await refreshData();
+        // Update stats
+        try {
+          const res = await fetch('/api/id-allocation');
+          if (res.ok) {
+            const statsData = await res.json();
+            if (statsData.totalPoolIds !== undefined) setTotalIds(statsData.totalPoolIds);
+            if (statsData.availableIds !== undefined) setAvailableIds(statsData.availableIds);
+            if (statsData.disabledIds !== undefined) setDisabledIds(statsData.disabledIds);
+            if (statsData.allocatedIdsCount !== undefined) setAllocatedIdsCount(statsData.allocatedIdsCount);
+            if (statsData.allocatedIds) setAllocatedIds(statsData.allocatedIds);
+          }
+        } catch (e) {
+          console.error('Failed to refresh stats:', e);
+        }
       } else {
         setErrorMessage(data.error || 'Clear all failed');
       }
@@ -184,7 +229,20 @@ export const useIdAllocation = () => {
             }
           }
           alert(message);
-          await refreshData();
+          // Update stats
+          try {
+            const res = await fetch('/api/id-allocation');
+            if (res.ok) {
+              const statsData = await res.json();
+              if (statsData.totalPoolIds !== undefined) setTotalIds(statsData.totalPoolIds);
+              if (statsData.availableIds !== undefined) setAvailableIds(statsData.availableIds);
+              if (statsData.disabledIds !== undefined) setDisabledIds(statsData.disabledIds);
+              if (statsData.allocatedIdsCount !== undefined) setAllocatedIdsCount(statsData.allocatedIdsCount);
+              if (statsData.allocatedIds) setAllocatedIds(statsData.allocatedIds);
+            }
+          } catch (e) {
+            console.error('Failed to refresh stats:', e);
+          }
         } else {
           setErrorMessage(data.error || 'Upload failed');
         }
