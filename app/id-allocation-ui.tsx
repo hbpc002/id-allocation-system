@@ -171,80 +171,81 @@ const IdAllocationUI = () => {
   }, [scrollingIds]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="border border-black rounded-lg p-4 mb-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold tracking-tight">工号分配系统</h1>
-          <div className="flex gap-2">
+    <div className="w-full max-w-2xl mx-auto px-4 py-4 font-sans">
+      {/* Header - Happy Coder Style: Minimal, functional */}
+      <div className="border border-gray-900 bg-white mb-4">
+        <div className="px-4 py-3 flex justify-between items-center border-b border-gray-900">
+          <h1 className="text-lg font-bold">工号分配系统</h1>
+          <div className="flex gap-1">
             {viewMode === 'user' && (
               <button
                 onClick={() => setViewMode('login')}
-                className="px-3 py-1.5 border border-black bg-white hover:bg-black hover:text-white text-black rounded text-sm font-medium transition-colors"
+                className="px-3 py-1 text-xs border border-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors"
               >
-                管理员登录
+                管理员
               </button>
             )}
             {viewMode === 'login' && (
               <button
                 onClick={() => setViewMode('user')}
-                className="px-3 py-1.5 border border-black bg-white hover:bg-black hover:text-white text-black rounded text-sm font-medium transition-colors"
+                className="px-3 py-1 text-xs border border-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors"
               >
                 返回
               </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* User Mode */}
-      {viewMode === 'user' && (
-        <div className="border border-black rounded-lg p-4">
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="mb-3 p-2 border border-black bg-white text-sm">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Your Allocated ID */}
-          {allocatedId !== null && (
-            <div className="mb-4 p-4 border border-black text-center">
-              <p className="text-xs mb-1">您的工号</p>
-              <p className="text-4xl font-bold">{allocatedId}</p>
-            </div>
-          )}
-
-          {/* Form Buttons */}
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
-            <button
-              onClick={() => handleClockIn()}
-              className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
-            >
-              申请工号
-            </button>
-            <button
-              onClick={handleClockOut}
-              className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
-            >
-              释放工号
-            </button>
-            {adminSessionId && (
-              <>
-                <button
-                  onClick={() => handleClearAll(adminSessionId)}
-                  className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
-                >
-                  清空所有
-                </button>
-                <button
-                  onClick={() => document.getElementById('fileInput')?.click()}
-                  className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
-                >
-                  上传工号池
-                </button>
-              </>
+        {/* User Mode */}
+        {viewMode === 'user' && (
+          <div className="p-4 space-y-4">
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="p-2 border border-gray-900 bg-gray-50 text-sm">
+                {errorMessage}
+              </div>
             )}
+
+            {/* Your Allocated ID - Prominent display */}
+            {allocatedId !== null && (
+              <div className="p-4 border border-gray-900 bg-white text-center">
+                <div className="text-xs text-gray-600 mb-1">您的工号</div>
+                <div className="text-4xl font-bold tracking-tighter">{allocatedId}</div>
+              </div>
+            )}
+
+            {/* Action Buttons - Compact, functional */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleClockIn()}
+                className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
+              >
+                申请工号
+              </button>
+              <button
+                onClick={handleClockOut}
+                className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
+              >
+                释放工号
+              </button>
+              {adminSessionId && (
+                <>
+                  <button
+                    onClick={() => handleClearAll(adminSessionId)}
+                    className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
+                  >
+                    清空所有
+                  </button>
+                  <button
+                    onClick={() => document.getElementById('fileInput')?.click()}
+                    className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
+                  >
+                    上传工号池
+                  </button>
+                </>
+              )}
+            </div>
+
             <input
               id="fileInput"
               type="file"
@@ -258,83 +259,79 @@ const IdAllocationUI = () => {
                 }
               }}
             />
-          </div>
 
-          {/* Status Cards */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="border border-black p-2">
-              <p className="text-[10px]">工号总数</p>
-              <p className="text-lg font-bold">{totalIds}</p>
-            </div>
-            <div className="border border-black p-2">
-              <p className="text-[10px]">可用工号</p>
-              <p className="text-lg font-bold">{availableIds}</p>
-            </div>
-            <div className="border border-black p-2">
-              <p className="text-[10px]">已分配</p>
-              <p className="text-lg font-bold">{allocatedIdsCount}</p>
-            </div>
-            <div className="border border-black p-2">
-              <p className="text-[10px]">已停用</p>
-              <p className="text-lg font-bold">{disabledIds}</p>
-            </div>
-          </div>
-
-          {/* Time */}
-          <div className="border border-black p-2 mb-4 text-center text-xs">
-            {currentTime.toLocaleTimeString('zh-CN')}
-          </div>
-
-          {/* Scrolling List */}
-          <div className="border border-black">
-            <div className="p-2 text-xs font-bold border-b border-black">
-              已分配工号 (实时滚动)
-            </div>
-            {scrollingIds.length === 0 ? (
-              <div className="p-4 text-center text-sm text-gray-500">暂无数据</div>
-            ) : (
-              <div
-                ref={scrollContainerRef}
-                className="h-48 overflow-hidden relative"
-                style={{
-                  maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
-                }}
-              >
-                <div className="scroll-content animate-scrolling absolute w-full">
-                  {/* Render items twice for seamless loop */}
-                  {scrollingIds.map((item, index) => (
-                    <div key={index} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
-                      <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
-                        {item.id}
-                        {item.ipAddress === 'Your IP' && <span className="ml-2 text-xs">[您的]</span>}
-                      </span>
-                      <span className="text-xs">{item.ipAddress}</span>
-                    </div>
-                  ))}
-                  {scrollingIds.map((item, index) => (
-                    <div key={`dup-${index}`} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
-                      <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
-                        {item.id}
-                        {item.ipAddress === 'Your IP' && <span className="ml-2 text-xs">[您的]</span>}
-                      </span>
-                      <span className="text-xs">{item.ipAddress}</span>
-                    </div>
-                  ))}
-                </div>
+            {/* Stats - Compact 2x2 grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="border border-gray-900 p-2 bg-gray-50">
+                <div className="text-[10px] text-gray-600">工号总数</div>
+                <div className="text-base font-bold">{totalIds}</div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+              <div className="border border-gray-900 p-2 bg-gray-50">
+                <div className="text-[10px] text-gray-600">可用工号</div>
+                <div className="text-base font-bold">{availableIds}</div>
+              </div>
+              <div className="border border-gray-900 p-2 bg-gray-50">
+                <div className="text-[10px] text-gray-600">已分配</div>
+                <div className="text-base font-bold">{allocatedIdsCount}</div>
+              </div>
+              <div className="border border-gray-900 p-2 bg-gray-50">
+                <div className="text-[10px] text-gray-600">已停用</div>
+                <div className="text-base font-bold">{disabledIds}</div>
+              </div>
+            </div>
 
-      {/* Login Mode */}
-      {viewMode === 'login' && (
-        <div className="border border-black rounded-lg p-6 max-w-md mx-auto">
-          <h2 className="text-xl font-bold mb-4 text-center">管理员登录</h2>
-          <div className="space-y-3">
+            {/* Time */}
+            <div className="border border-gray-900 p-2 text-center text-xs font-mono bg-gray-50">
+              {currentTime.toLocaleTimeString('zh-CN')}
+            </div>
+
+            {/* Scrolling List */}
+            <div className="border border-gray-900">
+              <div className="px-3 py-2 text-xs font-bold border-b border-gray-900 bg-gray-50">
+                已分配工号 (实时滚动)
+              </div>
+              {scrollingIds.length === 0 ? (
+                <div className="p-4 text-center text-xs text-gray-500">暂无数据</div>
+              ) : (
+                <div
+                  ref={scrollContainerRef}
+                  className="h-40 overflow-hidden relative"
+                  style={{
+                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)'
+                  }}
+                >
+                  <div className="scroll-content animate-scrolling absolute w-full">
+                    {scrollingIds.map((item, index) => (
+                      <div key={index} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
+                        <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
+                          {item.id}
+                          {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
+                        </span>
+                        <span className="text-[10px] text-gray-600">{item.ipAddress}</span>
+                      </div>
+                    ))}
+                    {scrollingIds.map((item, index) => (
+                      <div key={`dup-${index}`} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
+                        <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
+                          {item.id}
+                          {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
+                        </span>
+                        <span className="text-[10px] text-gray-600">{item.ipAddress}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Login Mode */}
+        {viewMode === 'login' && (
+          <div className="p-4 space-y-3">
+            <div className="text-center font-bold text-sm">管理员登录</div>
             <div>
-              <label className="block mb-1 text-sm font-bold">密码</label>
               <input
                 type="password"
                 value={loginPassword}
@@ -342,30 +339,32 @@ const IdAllocationUI = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAdminLogin();
                 }}
-                className="w-full px-3 py-2 border border-black rounded bg-white focus:outline-none"
-                placeholder="输入密码"
+                className="w-full px-3 py-2 border border-gray-900 bg-white focus:outline-none text-sm"
+                placeholder="密码"
               />
             </div>
             <button
               onClick={handleAdminLogin}
-              className="w-full py-2 border border-black bg-white hover:bg-black hover:text-white rounded font-medium transition-colors"
+              className="w-full py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
             >
               登录
             </button>
-            <p className="text-xs text-center">
-              默认密码: <span className="font-mono">root123</span>
-            </p>
+            <div className="text-center text-[10px] text-gray-600">
+              默认密码: <span className="font-mono font-bold">root123</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Admin Mode */}
-      {viewMode === 'admin' && adminSessionId && (
-        <AdminPanel
-          onLogout={handleLogout}
-          adminSessionId={adminSessionId}
-        />
-      )}
+        {/* Admin Mode */}
+        {viewMode === 'admin' && adminSessionId && (
+          <div className="p-4">
+            <AdminPanel
+              onLogout={handleLogout}
+              adminSessionId={adminSessionId}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
