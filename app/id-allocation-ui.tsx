@@ -177,13 +177,18 @@ const IdAllocationUI = () => {
                 }}
                 onWheel={(e) => {
                   e.preventDefault();
-                  const target = e.currentTarget.querySelector('.scroll-content') as HTMLElement;
+                  const target = e.currentTarget.querySelector('.scroll-content') as HTMLElement & { scrollTimeout?: NodeJS.Timeout };
                   if (target) {
                     target.style.animationPlayState = 'paused';
-                    target.style.transform = `translateY(-${Math.max(0, (parseFloat(target.style.transform.replace('translateY(-', '').replace('px)', '') || 0) + e.deltaY))}px)`;
+                    const currentTransform = target.style.transform;
+                    const currentOffset = currentTransform
+                      ? parseFloat(currentTransform.replace('translateY(-', '').replace('px)', ''))
+                      : 0;
+                    const newOffset = Math.max(0, currentOffset + e.deltaY);
+                    target.style.transform = `translateY(-${newOffset}px)`;
                     // Resume animation after 2 seconds of no wheel activity
-                    clearTimeout((target as any).scrollTimeout);
-                    (target as any).scrollTimeout = setTimeout(() => {
+                    if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
+                    target.scrollTimeout = setTimeout(() => {
                       target.style.animationPlayState = 'running';
                     }, 2000);
                   }
