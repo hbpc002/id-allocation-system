@@ -235,10 +235,10 @@ const IdAllocationUI = () => {
               {currentTime.toLocaleTimeString('zh-CN')}
             </div>
 
-            {/* Scrolling List */}
+            {/* Scrolling List - Auto-scroll only when content exceeds container */}
             <div className="border border-gray-900">
               <div className="px-3 py-2 text-xs font-bold border-b border-gray-900 bg-gray-50">
-                已分配工号 (实时滚动)
+                已分配工号 {scrollingIds.length > 8 && <span className="text-gray-500 font-normal">(自动滚动)</span>}
               </div>
               {scrollingIds.length === 0 ? (
                 <div className="p-4 text-center text-xs text-gray-500">暂无数据</div>
@@ -247,7 +247,7 @@ const IdAllocationUI = () => {
                   maskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)'
                 }}>
-                  <div className="scroll-content animate-scrolling absolute w-full">
+                  <div className={`absolute w-full ${scrollingIds.length > 8 ? 'scroll-content animate-scrolling' : ''}`}>
                     {scrollingIds.map((item, index) => (
                       <div key={index} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
                         <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
@@ -257,7 +257,7 @@ const IdAllocationUI = () => {
                         <span className="text-[10px] text-gray-600">{item.ipAddress}</span>
                       </div>
                     ))}
-                    {scrollingIds.map((item, index) => (
+                    {scrollingIds.length > 8 && scrollingIds.map((item, index) => (
                       <div key={`dup-${index}`} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
                         <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
                           {item.id}
