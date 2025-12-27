@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useIdAllocation } from './hooks/useIdAllocation';
-import { IdAllocationForm } from './components/IdAllocationForm';
-import { IdAllocationStatus } from './components/IdAllocationStatus';
 import { AdminPanel } from './components/AdminPanel';
 
 const IdAllocationUI = () => {
@@ -30,7 +28,6 @@ const IdAllocationUI = () => {
   useEffect(() => {
     const savedSession = localStorage.getItem('adminSessionId');
     if (savedSession) {
-      // Verify session is still valid
       fetch('/api/id-allocation', {
         method: 'POST',
         headers: {
@@ -79,7 +76,6 @@ const IdAllocationUI = () => {
 
   const handleLogout = () => {
     if (adminSessionId) {
-      // Clear session from server (optional, best effort)
       fetch('/api/id-allocation', {
         method: 'POST',
         headers: {
@@ -94,33 +90,33 @@ const IdAllocationUI = () => {
     setViewMode('user');
   };
 
-  // Build scrolling list with proper deduplication
-  // The key insight: allocatedIds from API already contains ALL allocated IDs including current user's
-  // So we just need to ensure uniqueness and add "Your IP" label for current user
+  // Build scrolling list - ensure NO duplicates
+  // allocatedIds from API contains all allocated IDs
+  // We need to: 1) Remove duplicates, 2) Mark current user's ID
   const scrollingIds = (() => {
-    // Create a map to ensure uniqueness by ID
-    const idMap = new Map<number, { id: number; ipAddress: string }>();
+    // Use Map to ensure uniqueness
+    const uniqueMap = new Map<number, { id: number; ipAddress: string }>();
 
-    // Add all allocated IDs from API
+    // Add all from API, but track what we've seen
     for (const item of allocatedIds) {
-      if (!idMap.has(item.id)) {
-        idMap.set(item.id, item);
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item);
       }
     }
 
-    // If current user has an ID, mark it with "Your IP"
+    // If user has an ID, ensure it's marked with "Your IP"
     if (allocatedId !== null) {
-      idMap.set(allocatedId, { id: allocatedId, ipAddress: 'Your IP' });
+      uniqueMap.set(allocatedId, { id: allocatedId, ipAddress: 'Your IP' });
     }
 
-    // Convert back to array
-    return Array.from(idMap.values()).sort((a, b) => a.id - b.id);
+    // Convert to sorted array
+    return Array.from(uniqueMap.values()).sort((a, b) => a.id - b.id);
   })();
 
-  // Ref for scroll container to add wheel event listener
+  // Ref for scroll container
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Wheel handler for manual scroll control
+  // Wheel handler
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -136,7 +132,6 @@ const IdAllocationUI = () => {
           : 0;
         const newOffset = Math.max(0, currentOffset + e.deltaY);
         target.style.transform = `translateY(-${newOffset}px)`;
-        // Resume animation after 2 seconds of no wheel activity
         if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
         target.scrollTimeout = setTimeout(() => {
           target.style.animationPlayState = 'running';
@@ -151,18 +146,16 @@ const IdAllocationUI = () => {
   }, [scrollingIds]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-8">
+    <div className="w-full max-w-3xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-6 shadow-sm mb-6">
+      <div className="border border-black rounded-lg p-4 mb-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-medium text-slate-800">
-            工号分配系统
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight">工号分配系统</h1>
           <div className="flex gap-2">
             {viewMode === 'user' && (
               <button
                 onClick={() => setViewMode('login')}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-3 py-1.5 border border-black bg-white hover:bg-black hover:text-white text-black rounded text-sm font-medium transition-colors"
               >
                 管理员登录
               </button>
@@ -170,7 +163,7 @@ const IdAllocationUI = () => {
             {viewMode === 'login' && (
               <button
                 onClick={() => setViewMode('user')}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                className="px-3 py-1.5 border border-black bg-white hover:bg-black hover:text-white text-black rounded text-sm font-medium transition-colors"
               >
                 返回
               </button>
@@ -181,87 +174,127 @@ const IdAllocationUI = () => {
 
       {/* User Mode */}
       {viewMode === 'user' && (
-        <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="border border-black rounded-lg p-4">
+          {/* Error Message */}
           {errorMessage && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-3 p-2 border border-black bg-white text-sm">
               {errorMessage}
             </div>
           )}
 
           {/* Your Allocated ID */}
           {allocatedId !== null && (
-            <div className="mb-6 p-6 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl text-center">
-              <p className="text-sm text-indigo-600 mb-2 font-medium">您的工号</p>
-              <p className="text-5xl font-bold text-indigo-700 tracking-tight">{allocatedId}</p>
+            <div className="mb-4 p-4 border border-black text-center">
+              <p className="text-xs mb-1">您的工号</p>
+              <p className="text-4xl font-bold">{allocatedId}</p>
             </div>
           )}
 
-          <IdAllocationForm
-            onClockIn={handleClockIn}
-            onClockOut={handleClockOut}
-            onClearAll={() => handleClearAll(adminSessionId || '')}
-            onUploadPool={(file) => uploadEmployeePool(file, adminSessionId || '')}
-            isLoggedIn={!!adminSessionId}
-          />
+          {/* Form Buttons */}
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <button
+              onClick={() => handleClockIn()}
+              className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
+            >
+              申请工号
+            </button>
+            <button
+              onClick={handleClockOut}
+              className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
+            >
+              释放工号
+            </button>
+            {adminSessionId && (
+              <>
+                <button
+                  onClick={() => handleClearAll(adminSessionId)}
+                  className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
+                >
+                  清空所有
+                </button>
+                <button
+                  onClick={() => document.getElementById('fileInput')?.click()}
+                  className="px-4 py-2 border border-black bg-white hover:bg-black hover:text-white text-black rounded font-medium transition-colors"
+                >
+                  上传工号池
+                </button>
+              </>
+            )}
+            <input
+              id="fileInput"
+              type="file"
+              accept=".txt"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && adminSessionId) {
+                  uploadEmployeePool(file, adminSessionId);
+                  e.target.value = '';
+                }
+              }}
+            />
+          </div>
 
-          <IdAllocationStatus
-            totalIds={totalIds}
-            availableIds={availableIds}
-            disabledIds={disabledIds}
-            allocatedIdsCount={allocatedIdsCount}
-            currentTime={currentTime}
-          />
+          {/* Status Cards */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="border border-black p-2">
+              <p className="text-[10px]">工号总数</p>
+              <p className="text-lg font-bold">{totalIds}</p>
+            </div>
+            <div className="border border-black p-2">
+              <p className="text-[10px]">可用工号</p>
+              <p className="text-lg font-bold">{availableIds}</p>
+            </div>
+            <div className="border border-black p-2">
+              <p className="text-[10px]">已分配</p>
+              <p className="text-lg font-bold">{allocatedIdsCount}</p>
+            </div>
+            <div className="border border-black p-2">
+              <p className="text-[10px]">已停用</p>
+              <p className="text-lg font-bold">{disabledIds}</p>
+            </div>
+          </div>
 
-          {/* Scrolling Allocated IDs */}
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-slate-600 mb-2">
+          {/* Time */}
+          <div className="border border-black p-2 mb-4 text-center text-xs">
+            {currentTime.toLocaleTimeString('zh-CN')}
+          </div>
+
+          {/* Scrolling List */}
+          <div className="border border-black">
+            <div className="p-2 text-xs font-bold border-b border-black">
               已分配工号 (实时滚动)
-            </h3>
+            </div>
             {scrollingIds.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm bg-slate-50/50 rounded-xl border border-slate-100">
-                暂无已分配工号
-              </div>
+              <div className="p-4 text-center text-sm text-gray-500">暂无数据</div>
             ) : (
               <div
                 ref={scrollContainerRef}
-                className="h-40 overflow-hidden border border-slate-200 rounded-xl bg-white/60 backdrop-blur-sm relative"
+                className="h-48 overflow-hidden relative"
                 style={{
-                  maskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)'
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
                 }}
               >
                 <div className="scroll-content animate-scrolling absolute w-full">
+                  {/* First set */}
                   {scrollingIds.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
-                      <span className={`font-semibold ${item.ipAddress === 'Your IP' ? 'text-indigo-600' : 'text-slate-700'}`}>
+                    <div key={index} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
+                      <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
                         {item.id}
-                        {item.ipAddress === 'Your IP' && (
-                          <span className="ml-2 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium">
-                            您的工号
-                          </span>
-                        )}
+                        {item.ipAddress === 'Your IP' && <span className="ml-2 text-xs">[您的]</span>}
                       </span>
-                      <span className="text-xs text-slate-500 font-mono">{item.ipAddress}</span>
+                      <span className="text-xs">{item.ipAddress}</span>
                     </div>
                   ))}
-                  {/* Duplicate for seamless loop */}
+                  {/* Second set for seamless loop */}
                   {scrollingIds.map((item, index) => (
-                    <div
-                      key={`dup-${index}`}
-                      className="flex justify-between items-center px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
-                      <span className={`font-semibold ${item.ipAddress === 'Your IP' ? 'text-indigo-600' : 'text-slate-700'}`}>
+                    <div key={`dup-${index}`} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
+                      <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
                         {item.id}
-                        {item.ipAddress === 'Your IP' && (
-                          <span className="ml-2 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium">
-                            您的工号
-                          </span>
-                        )}
+                        {item.ipAddress === 'Your IP' && <span className="ml-2 text-xs">[您的]</span>}
                       </span>
-                      <span className="text-xs text-slate-500 font-mono">{item.ipAddress}</span>
+                      <span className="text-xs">{item.ipAddress}</span>
                     </div>
                   ))}
                 </div>
@@ -273,11 +306,11 @@ const IdAllocationUI = () => {
 
       {/* Login Mode */}
       {viewMode === 'login' && (
-        <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-8 shadow-sm max-w-md mx-auto">
-          <h2 className="text-2xl font-medium text-slate-800 mb-6 text-center">管理员登录</h2>
-          <div className="space-y-4">
+        <div className="border border-black rounded-lg p-6 max-w-md mx-auto">
+          <h2 className="text-xl font-bold mb-4 text-center">管理员登录</h2>
+          <div className="space-y-3">
             <div>
-              <label className="block mb-2 text-sm font-medium text-slate-700">密码</label>
+              <label className="block mb-1 text-sm font-bold">密码</label>
               <input
                 type="password"
                 value={loginPassword}
@@ -285,18 +318,18 @@ const IdAllocationUI = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAdminLogin();
                 }}
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="请输入管理员密码"
+                className="w-full px-3 py-2 border border-black rounded bg-white focus:outline-none"
+                placeholder="输入密码"
               />
             </div>
             <button
               onClick={handleAdminLogin}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+              className="w-full py-2 border border-black bg-white hover:bg-black hover:text-white rounded font-medium transition-colors"
             >
               登录
             </button>
-            <p className="text-xs text-slate-500 text-center">
-              默认密码: <code className="bg-slate-100 px-2 py-1 rounded">root123</code>
+            <p className="text-xs text-center">
+              默认密码: <span className="font-mono">root123</span>
             </p>
           </div>
         </div>
