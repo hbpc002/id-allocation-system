@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useIdAllocation } from './hooks/useIdAllocation';
 import { IdAllocationForm } from './components/IdAllocationForm';
 import { IdAllocationStatus } from './components/IdAllocationStatus';
@@ -95,11 +95,58 @@ const IdAllocationUI = () => {
   };
 
   // Auto-refresh allocated IDs for scrolling effect
-  // Filter out the current user's ID from allocatedIds to avoid duplicates
-  // The current user's ID will be added separately with "Your IP" label
-  const scrollingIds = allocatedIds
-    .filter(item => item.id !== allocatedId)
-    .concat(allocatedId !== null ? [{ id: allocatedId, ipAddress: 'Your IP' }] : []);
+  // Build unique list: other users' IDs + current user's ID with "Your IP" label
+  const scrollingIds = (() => {
+    // Get other users' IDs (excluding current user's ID)
+    const otherIds = allocatedIds.filter(item => item.id !== allocatedId);
+    // Add current user's ID with "Your IP" label if they have one
+    const userId = allocatedId !== null ? { id: allocatedId, ipAddress: 'Your IP' } : null;
+    // Combine and ensure uniqueness by ID
+    const allIds = userId ? [...otherIds, userId] : otherIds;
+    // Remove any duplicates by ID (keep first occurrence)
+    const uniqueIds: Array<{ id: number; ipAddress: string }> = [];
+    const seen = new Set<number>();
+    for (const item of allIds) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        uniqueIds.push(item);
+      }
+    }
+    return uniqueIds;
+  })();
+
+  // Ref for scroll container to add wheel event listener
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Wheel handler for manual scroll control - using native event listener to avoid passive warning
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const target = container.querySelector('.scroll-content') as HTMLElement & { scrollTimeout?: NodeJS.Timeout };
+      if (target) {
+        target.style.animationPlayState = 'paused';
+        const currentTransform = target.style.transform;
+        const currentOffset = currentTransform
+          ? parseFloat(currentTransform.replace('translateY(-', '').replace('px)', ''))
+          : 0;
+        const newOffset = Math.max(0, currentOffset + e.deltaY);
+        target.style.transform = `translateY(-${newOffset}px)`;
+        // Resume animation after 2 seconds of no wheel activity
+        if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
+        target.scrollTimeout = setTimeout(() => {
+          target.style.animationPlayState = 'running';
+        }, 2000);
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [scrollingIds]); // Re-bind when scrollingIds changes
 
   return (
     <div className="w-full max-w-6xl">
@@ -170,28 +217,11 @@ const IdAllocationUI = () => {
               <p className="text-gray-500 dark:text-gray-400">暂无已分配工号</p>
             ) : (
               <div
-                className="h-32 overflow-hidden border rounded dark:border-gray-600 bg-gray-50 dark:bg-gray-900 relative cursor-grab active:cursor-grabbing"
+                ref={scrollContainerRef}
+                className="h-32 overflow-hidden border rounded dark:border-gray-600 bg-gray-50 dark:bg-gray-900 relative"
                 style={{
                   maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
-                }}
-                onWheel={(e) => {
-                  e.preventDefault();
-                  const target = e.currentTarget.querySelector('.scroll-content') as HTMLElement & { scrollTimeout?: NodeJS.Timeout };
-                  if (target) {
-                    target.style.animationPlayState = 'paused';
-                    const currentTransform = target.style.transform;
-                    const currentOffset = currentTransform
-                      ? parseFloat(currentTransform.replace('translateY(-', '').replace('px)', ''))
-                      : 0;
-                    const newOffset = Math.max(0, currentOffset + e.deltaY);
-                    target.style.transform = `translateY(-${newOffset}px)`;
-                    // Resume animation after 2 seconds of no wheel activity
-                    if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
-                    target.scrollTimeout = setTimeout(() => {
-                      target.style.animationPlayState = 'running';
-                    }, 2000);
-                  }
                 }}
               >
                 <div className="scroll-content animate-scrolling absolute w-full">
