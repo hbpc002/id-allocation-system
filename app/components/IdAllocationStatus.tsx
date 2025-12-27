@@ -30,25 +30,25 @@ export const IdAllocationStatus: React.FC<IdAllocationStatusProps> = ({
   currentTime,
 }) => {
   return (
-    <div className="mb-4 grid grid-cols-2 gap-4">
-      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded">
-        <p className="text-sm text-gray-600 dark:text-gray-400">工号总数</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalIds}</p>
+    <div className="mb-6 grid grid-cols-2 gap-3">
+      <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-lg">
+        <p className="text-xs text-slate-500 mb-1">工号总数</p>
+        <p className="text-xl font-semibold text-slate-800">{totalIds}</p>
       </div>
-      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded">
-        <p className="text-sm text-green-700 dark:text-green-300">可用工号</p>
-        <p className="text-2xl font-bold text-green-700 dark:text-green-300">{availableIds}</p>
+      <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
+        <p className="text-xs text-emerald-600 mb-1">可用工号</p>
+        <p className="text-xl font-semibold text-emerald-700">{availableIds}</p>
       </div>
-      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-        <p className="text-sm text-blue-700 dark:text-blue-300">已分配</p>
-        <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{allocatedIdsCount}</p>
+      <div className="p-3 bg-indigo-50/80 border border-indigo-200 rounded-lg">
+        <p className="text-xs text-indigo-600 mb-1">已分配</p>
+        <p className="text-xl font-semibold text-indigo-700">{allocatedIdsCount}</p>
       </div>
-      <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded">
-        <p className="text-sm text-orange-700 dark:text-orange-300">已停用</p>
-        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{disabledIds}</p>
+      <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-lg">
+        <p className="text-xs text-amber-600 mb-1">已停用</p>
+        <p className="text-xl font-semibold text-amber-700">{disabledIds}</p>
       </div>
-      <div className="col-span-2 p-2 text-center text-sm text-gray-600 dark:text-gray-400">
-        当前时间: <span className="font-medium">{formatDateTime(currentTime)}</span>
+      <div className="col-span-2 p-2 text-center text-xs text-slate-500 bg-slate-50/50 border border-slate-100 rounded-lg">
+        当前时间: <span className="font-medium text-slate-700">{formatDateTime(currentTime)}</span>
       </div>
     </div>
   );

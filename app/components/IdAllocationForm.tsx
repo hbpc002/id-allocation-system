@@ -21,13 +21,13 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
     <div className="flex flex-wrap justify-center gap-3 mb-6">
       <button
         onClick={onClockIn}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
       >
         申请工号
       </button>
       <button
         onClick={onClockOut}
-        className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+        className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
       >
         释放工号
       </button>
@@ -35,13 +35,13 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
         <>
           <button
             onClick={onClearAll}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
           >
             清空所有
           </button>
           <button
             onClick={() => document.getElementById('fileInput')?.click()}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
           >
             上传工号池
           </button>
