@@ -56,32 +56,38 @@ async function verifyAdminAuth(request: Request): Promise<boolean> {
 }
 
 export async function GET(request: Request) {
-  cleanupExpiredIds(); // Clean up expired IDs on every GET request to ensure fresh data
+  try {
+    cleanupExpiredIds(); // Clean up expired IDs on every GET request to ensure fresh data
 
-  const clientIp = getClientIp(request);
+    const clientIp = getClientIp(request);
 
-  // Get currently allocated IDs for the client IP
-  const clientAllocatedIdRow = getDb().prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
-  const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
+    // Get currently allocated IDs for the client IP
+    const clientAllocatedIdRow = getDb().prepare('SELECT id FROM allocated_ids WHERE ipAddress = ?').get(clientIp) as { id: number } | undefined;
+    const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
 
-  // Get all allocated IDs with their IP addresses directly from the database
-  const allocatedRows = getDb().prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
-  const allocatedIdsWithIPs = allocatedRows.map(row => ({
-    id: row.id,
-    ipAddress: row.ipAddress
-  }));
+    // Get all allocated IDs with their IP addresses directly from the database
+    const allocatedRows = getDb().prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
+    const allocatedIdsWithIPs = allocatedRows.map(row => ({
+      id: row.id,
+      ipAddress: row.ipAddress
+    }));
 
-  // Get pool statistics
-  const poolStats = getPoolStats();
+    // Get pool statistics
+    const poolStats = getPoolStats();
 
-  return NextResponse.json({
-    allocatedIds: allocatedIdsWithIPs,
-    totalPoolIds: poolStats.total,
-    availableIds: poolStats.available,
-    disabledIds: poolStats.disabled,
-    allocatedIdsCount: poolStats.allocated,
-    clientAllocatedId
-  });
+    return NextResponse.json({
+      allocatedIds: allocatedIdsWithIPs,
+      totalPoolIds: poolStats.total,
+      availableIds: poolStats.available,
+      disabledIds: poolStats.disabled,
+      allocatedIdsCount: poolStats.allocated,
+      clientAllocatedId
+    });
+  } catch (error) {
+    console.error('Error in GET handler:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

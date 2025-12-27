@@ -8,15 +8,38 @@ function getDb(): Database.Database {
   if (_db) return _db;
 
   // 确定数据目录路径，优先使用环境变量，否则使用默认路径
-  const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  // Render 环境使用 /tmp 目录（有写入权限）
+  let dataDir = process.env.DATA_DIR;
+  if (!dataDir) {
+    if (process.env.RENDER === 'true') {
+      dataDir = '/tmp/data';
+    } else {
+      dataDir = path.join(process.cwd(), 'data');
+    }
+  }
+
+  console.log('Database directory:', dataDir);
 
   // 确保数据目录存在
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log('Created data directory:', dataDir);
+    }
+  } catch (error) {
+    console.error('Failed to create data directory:', error);
+    throw error;
   }
 
   const dbPath = path.join(dataDir, 'employee_ids.db');
-  _db = new Database(dbPath);
+  console.log('Database path:', dbPath);
+
+  try {
+    _db = new Database(dbPath);
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw error;
+  }
 
   // 在Docker环境中启用WAL模式以提高性能
   if (process.env.NODE_ENV === 'production') {
