@@ -110,36 +110,61 @@ const IdAllocationUI = () => {
     }
 
     // Convert to sorted array
-    return Array.from(uniqueMap.values()).sort((a, b) => a.id - b.id);
+    const result = Array.from(uniqueMap.values()).sort((a, b) => a.id - b.id);
+
+    // Debug logging
+    console.log('Allocated IDs from API:', allocatedIds);
+    console.log('Unique IDs after dedup:', result);
+    console.log('Current user allocated ID:', allocatedId);
+
+    return result;
   })();
 
   // Ref for scroll container
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Wheel handler
+  // Wheel handler - supports manual scrolling with mouse wheel
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
+      // Prevent default scrolling behavior
       e.preventDefault();
+
       const target = container.querySelector('.scroll-content') as HTMLElement & { scrollTimeout?: NodeJS.Timeout };
-      if (target) {
-        target.style.animationPlayState = 'paused';
-        const currentTransform = target.style.transform;
-        const currentOffset = currentTransform
-          ? parseFloat(currentTransform.replace('translateY(-', '').replace('px)', ''))
-          : 0;
-        const newOffset = Math.max(0, currentOffset + e.deltaY);
-        target.style.transform = `translateY(-${newOffset}px)`;
-        if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
-        target.scrollTimeout = setTimeout(() => {
-          target.style.animationPlayState = 'running';
-        }, 2000);
+      if (!target) return;
+
+      // Pause CSS animation
+      target.style.animationPlayState = 'paused';
+
+      // Get current transform value
+      const currentTransform = target.style.transform;
+      let currentOffset = 0;
+      if (currentTransform && currentTransform.includes('translateY')) {
+        const match = currentTransform.match(/translateY\(-?(\d+(?:\.\d+)?)px\)/);
+        if (match) {
+          currentOffset = parseFloat(match[1]);
+        }
       }
+
+      // Calculate new offset (scroll down = positive deltaY = move content up = negative transform)
+      // But we want to move content down when scrolling down, so we add deltaY
+      const newOffset = Math.max(0, currentOffset + e.deltaY);
+      target.style.transform = `translateY(-${newOffset}px)`;
+
+      // Resume animation after 2 seconds of no wheel activity
+      if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
+      target.scrollTimeout = setTimeout(() => {
+        target.style.animationPlayState = 'running';
+        // Reset transform to let animation take over
+        target.style.transform = '';
+      }, 2000);
     };
 
+    // Use passive: false to allow preventDefault
     container.addEventListener('wheel', handleWheel, { passive: false });
+
     return () => {
       container.removeEventListener('wheel', handleWheel);
     };
@@ -277,7 +302,7 @@ const IdAllocationUI = () => {
                 }}
               >
                 <div className="scroll-content animate-scrolling absolute w-full">
-                  {/* First set */}
+                  {/* Render items twice for seamless loop */}
                   {scrollingIds.map((item, index) => (
                     <div key={index} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
                       <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
@@ -287,7 +312,6 @@ const IdAllocationUI = () => {
                       <span className="text-xs">{item.ipAddress}</span>
                     </div>
                   ))}
-                  {/* Second set for seamless loop */}
                   {scrollingIds.map((item, index) => (
                     <div key={`dup-${index}`} className="flex justify-between px-3 py-2 border-b border-gray-200 text-sm">
                       <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
