@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIdAllocation } from './hooks/useIdAllocation';
 import { AdminPanel } from './components/AdminPanel';
 
@@ -119,56 +119,6 @@ const IdAllocationUI = () => {
 
     return result;
   })();
-
-  // Ref for scroll container
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Wheel handler - supports manual scrolling with mouse wheel
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      // Prevent default scrolling behavior
-      e.preventDefault();
-
-      const target = container.querySelector('.scroll-content') as HTMLElement & { scrollTimeout?: NodeJS.Timeout };
-      if (!target) return;
-
-      // Pause CSS animation
-      target.style.animationPlayState = 'paused';
-
-      // Get current transform value
-      const currentTransform = target.style.transform;
-      let currentOffset = 0;
-      if (currentTransform && currentTransform.includes('translateY')) {
-        const match = currentTransform.match(/translateY\(-?(\d+(?:\.\d+)?)px\)/);
-        if (match) {
-          currentOffset = parseFloat(match[1]);
-        }
-      }
-
-      // Calculate new offset (scroll down = positive deltaY = move content up = negative transform)
-      // But we want to move content down when scrolling down, so we add deltaY
-      const newOffset = Math.max(0, currentOffset + e.deltaY);
-      target.style.transform = `translateY(-${newOffset}px)`;
-
-      // Resume animation after 2 seconds of no wheel activity
-      if (target.scrollTimeout) clearTimeout(target.scrollTimeout);
-      target.scrollTimeout = setTimeout(() => {
-        target.style.animationPlayState = 'running';
-        // Reset transform to let animation take over
-        target.style.transform = '';
-      }, 2000);
-    };
-
-    // Use passive: false to allow preventDefault
-    container.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, [scrollingIds]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-4 font-sans">
@@ -293,14 +243,10 @@ const IdAllocationUI = () => {
               {scrollingIds.length === 0 ? (
                 <div className="p-4 text-center text-xs text-gray-500">暂无数据</div>
               ) : (
-                <div
-                  ref={scrollContainerRef}
-                  className="h-40 overflow-hidden relative"
-                  style={{
-                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)'
-                  }}
-                >
+                <div className="h-40 overflow-hidden relative" style={{
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)'
+                }}>
                   <div className="scroll-content animate-scrolling absolute w-full">
                     {scrollingIds.map((item, index) => (
                       <div key={index} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
