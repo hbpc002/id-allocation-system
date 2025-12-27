@@ -95,10 +95,11 @@ const IdAllocationUI = () => {
   };
 
   // Auto-refresh allocated IDs for scrolling effect
-  const scrollingIds = [...allocatedIds];
-  if (allocatedId !== null && !scrollingIds.find(x => x.id === allocatedId)) {
-    scrollingIds.push({ id: allocatedId, ipAddress: 'Your IP' });
-  }
+  // Filter out the current user's ID from allocatedIds to avoid duplicates
+  // The current user's ID will be added separately with "Your IP" label
+  const scrollingIds = allocatedIds
+    .filter(item => item.id !== allocatedId)
+    .concat(allocatedId !== null ? [{ id: allocatedId, ipAddress: 'Your IP' }] : []);
 
   return (
     <div className="w-full max-w-6xl">
@@ -168,8 +169,27 @@ const IdAllocationUI = () => {
             {scrollingIds.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400">暂无已分配工号</p>
             ) : (
-              <div className="h-32 overflow-hidden border rounded dark:border-gray-600 bg-gray-50 dark:bg-gray-900 relative">
-                <div className="animate-scrolling absolute w-full">
+              <div
+                className="h-32 overflow-hidden border rounded dark:border-gray-600 bg-gray-50 dark:bg-gray-900 relative cursor-grab active:cursor-grabbing"
+                style={{
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
+                }}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  const target = e.currentTarget.querySelector('.scroll-content') as HTMLElement;
+                  if (target) {
+                    target.style.animationPlayState = 'paused';
+                    target.style.transform = `translateY(-${Math.max(0, (parseFloat(target.style.transform.replace('translateY(-', '').replace('px)', '') || 0) + e.deltaY))}px)`;
+                    // Resume animation after 2 seconds of no wheel activity
+                    clearTimeout((target as any).scrollTimeout);
+                    (target as any).scrollTimeout = setTimeout(() => {
+                      target.style.animationPlayState = 'running';
+                    }, 2000);
+                  }
+                }}
+              >
+                <div className="scroll-content animate-scrolling absolute w-full">
                   {scrollingIds.map((item, index) => (
                     <div
                       key={index}

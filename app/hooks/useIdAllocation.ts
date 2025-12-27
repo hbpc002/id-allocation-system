@@ -27,7 +27,12 @@ export const useIdAllocation = () => {
   const refreshData = async () => {
     try {
       const res = await fetch('/api/id-allocation');
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) {
+        // Don't throw error for failed fetch, just log and return silently
+        // This prevents UI errors during initial load or network issues
+        console.log(`API returned ${res.status}, skipping update`);
+        return;
+      }
       const data = await res.json();
       if (data.allocatedIds) {
         setAllocatedIds(data.allocatedIds);
@@ -50,8 +55,8 @@ export const useIdAllocation = () => {
         setAllocatedId(data.clientAllocatedId);
       }
     } catch (error) {
-      console.error('Failed to fetch allocated IDs:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      // Silently handle errors during auto-refresh to avoid disrupting UX
+      console.log('Auto-refresh skipped due to network/API error:', error);
     }
   };
 
