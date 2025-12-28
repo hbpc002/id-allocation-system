@@ -39,8 +39,19 @@ body {
   animation-play-state: paused;
 }
 
-/* Quote modal background color cycle animation */
-@keyframes bgCycle {
+/* Quote modal slide-in from right with color cycle */
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes colorCycle {
   0% { background-color: #fef3c7; }   /* 暖黄 */
   25% { background-color: #dbeafe; }  /* 浅蓝 */
   50% { background-color: #d1fae5; }  /* 浅绿 */
@@ -48,6 +59,10 @@ body {
   100% { background-color: #fef3c7; } /* 回到暖黄 */
 }
 
-.animate-bgCycle {
-  animation: bgCycle 5s ease-in-out infinite;
+.animate-slideInRight {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-colorCycle {
+  animation: colorCycle 8s ease-in-out infinite;
 }
