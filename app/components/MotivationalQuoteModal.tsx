@@ -24,7 +24,7 @@ const MotivationalQuoteModal: React.FC<MotivationalQuoteModalProps> = ({
           <div className="text-base font-bold text-white mb-1 leading-snug">
             {quote}
           </div>
-          <div className="text-xs text-white/85 text-right italic">
+          <div className="text-xs text-white/90 text-right italic">
             {source}
           </div>
         </div>
