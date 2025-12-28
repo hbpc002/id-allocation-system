@@ -382,6 +382,132 @@ const searchEmployeeIds = (query: string, status?: string) => {
   }>;
 };
 
+// ==================== 励志名言管理功能 ====================
+
+// 获取随机名言
+const getRandomQuote = () => {
+  const result = getDb().prepare(`
+    SELECT quote, source FROM motivational_quotes
+    ORDER BY RANDOM()
+    LIMIT 1
+  `).get() as { quote: string, source: string } | undefined;
+
+  return result || null;
+};
+
+// 批量导入名言
+const importQuotes = (text: string): { success: number; failed: number; errors: string[] } => {
+  const errors: string[] = [];
+  let success = 0;
+  let failed = 0;
+
+  const lines = text.split('\n');
+
+  getDb().transaction(() => {
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      if (!trimmed) return; // 跳过空行
+
+      try {
+        // 解析格式: 名言内容|来源
+        const parts = trimmed.split('|');
+        if (parts.length < 1) {
+          errors.push(`第${index + 1}行: 格式错误，至少需要名言内容`);
+          failed++;
+          return;
+        }
+
+        const quote = parts[0].trim();
+        const source = parts[1]?.trim() || '佚名';
+
+        if (!quote) {
+          errors.push(`第${index + 1}行: 名言内容不能为空`);
+          failed++;
+          return;
+        }
+
+        // 检查是否已存在（完全相同的名言和来源）
+        const existing = getDb().prepare(
+          'SELECT id FROM motivational_quotes WHERE quote = ? AND source = ?'
+        ).get(quote, source);
+
+        if (existing) {
+          errors.push(`第${index + 1}行: 名言已存在`);
+          failed++;
+          return;
+        }
+
+        // 插入新名言
+        getDb().prepare(
+          'INSERT INTO motivational_quotes (quote, source) VALUES (?, ?)'
+        ).run(quote, source);
+
+        success++;
+      } catch (error) {
+        errors.push(`第${index + 1}行: ${error instanceof Error ? error.message : '未知错误'}`);
+        failed++;
+      }
+    });
+  })();
+
+  return { success, failed, errors };
+};
+
+// 获取所有名言
+const getAllQuotes = () => {
+  return getDb().prepare(`
+    SELECT id, quote, source, createdAt
+    FROM motivational_quotes
+    ORDER BY createdAt DESC
+  `).all() as Array<{
+    id: number;
+    quote: string;
+    source: string;
+    createdAt: string;
+  }>;
+};
+
+// 删除名言
+const deleteQuote = (id: number): { success: boolean; error?: string } => {
+  try {
+    const result = getDb().prepare('DELETE FROM motivational_quotes WHERE id = ?').run(id);
+    if (result.changes === 0) {
+      return { success: false, error: `名言ID ${id} 不存在` };
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// ==================== 系统配置管理功能 ====================
+
+// 获取弹窗间隔配置（毫秒）
+const getQuoteInterval = (): number => {
+  const result = getDb().prepare(
+    'SELECT value FROM system_config WHERE key = ?'
+  ).get('quote_popup_interval') as { value: string } | undefined;
+
+  return result ? parseInt(result.value) : 86400000; // 默认24小时
+};
+
+// 设置弹窗间隔配置（毫秒）
+const setQuoteInterval = (interval: number): { success: boolean; error?: string } => {
+  try {
+    if (isNaN(interval) || interval < 0) {
+      return { success: false, error: '间隔时间必须是非负数字' };
+    }
+
+    getDb().prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).run('quote_popup_interval', interval.toString());
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
 export {
   // 工号分配相关
   allocateId,
@@ -405,5 +531,15 @@ export {
   deleteEmployeeId,
   updateEmployeeIdStatus,
   batchUpdateEmployeeIds,
-  searchEmployeeIds
+  searchEmployeeIds,
+
+  // 励志名言相关
+  getRandomQuote,
+  importQuotes,
+  getAllQuotes,
+  deleteQuote,
+
+  // 系统配置相关
+  getQuoteInterval,
+  setQuoteInterval
 };

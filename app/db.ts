@@ -75,6 +75,20 @@ function getDb(): Database.Database {
       loginTime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       lastActivity TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- 励志名言表
+    CREATE TABLE IF NOT EXISTS motivational_quotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      quote TEXT NOT NULL,
+      source TEXT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 系统配置表
+    CREATE TABLE IF NOT EXISTS system_config (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 
   // 插入默认密码
@@ -82,6 +96,12 @@ function getDb(): Database.Database {
   const existingPassword = _db.prepare('SELECT value FROM passwords WHERE key = ?').get('login_password');
   if (!existingPassword) {
     _db.prepare('INSERT INTO passwords (key, value) VALUES (?, ?)').run('login_password', defaultPassword);
+  }
+
+  // 插入默认系统配置（24小时 = 86400000ms）
+  const existingQuoteInterval = _db.prepare('SELECT value FROM system_config WHERE key = ?').get('quote_popup_interval');
+  if (!existingQuoteInterval) {
+    _db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?)').run('quote_popup_interval', '86400000');
   }
 
   // 迁移：添加 updatedAt 字段

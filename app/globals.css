@@ -38,3 +38,16 @@ body {
 .animate-scrolling:hover {
   animation-play-state: paused;
 }
+
+/* Quote modal background color cycle animation */
+@keyframes bgCycle {
+  0% { background-color: #fef3c7; }   /* 暖黄 */
+  25% { background-color: #dbeafe; }  /* 浅蓝 */
+  50% { background-color: #d1fae5; }  /* 浅绿 */
+  75% { background-color: #fce7f3; }  /* 浅粉 */
+  100% { background-color: #fef3c7; } /* 回到暖黄 */
+}
+
+.animate-bgCycle {
+  animation: bgCycle 5s ease-in-out infinite;
+}

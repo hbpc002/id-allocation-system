@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useIdAllocation } from './hooks/useIdAllocation';
 import { AdminPanel } from './components/AdminPanel';
+import MotivationalQuoteModal from './components/MotivationalQuoteModal';
 
 const IdAllocationUI = () => {
   const {
@@ -23,6 +24,10 @@ const IdAllocationUI = () => {
   const [viewMode, setViewMode] = useState<'user' | 'login' | 'admin'>('user');
   const [adminSessionId, setAdminSessionId] = useState<string | null>(null);
   const [loginPassword, setLoginPassword] = useState('');
+
+  // Quote modal states
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [currentQuote, setCurrentQuote] = useState<{ quote: string; source: string } | null>(null);
 
   // Check for saved admin session on mount
   useEffect(() => {
@@ -45,6 +50,59 @@ const IdAllocationUI = () => {
       });
     }
   }, []);
+
+  // Check and show motivational quote on mount
+  useEffect(() => {
+    const checkAndShowQuote = async () => {
+      try {
+        // Get configured interval
+        const intervalResponse = await fetch('/api/id-allocation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getQuoteInterval' })
+        });
+
+        const intervalData = await intervalResponse.json();
+        if (!intervalData.success) return;
+
+        const interval = intervalData.data; // milliseconds
+
+        // Check localStorage for last show time
+        const lastShow = localStorage.getItem('quoteLastShow');
+        const now = Date.now();
+
+        // If never shown or interval exceeded
+        if (!lastShow || (now - parseInt(lastShow)) >= interval) {
+          // Get random quote
+          const quoteResponse = await fetch('/api/id-allocation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getRandomQuote' })
+          });
+
+          const quoteData = await quoteResponse.json();
+          if (quoteData.success && quoteData.data) {
+            setCurrentQuote(quoteData.data);
+            setShowQuoteModal(true);
+            localStorage.setItem('quoteLastShow', now.toString());
+          }
+        }
+      } catch (error) {
+        console.error('Error checking quote:', error);
+      }
+    };
+
+    // Only show in user mode
+    if (viewMode === 'user') {
+      checkAndShowQuote();
+    }
+  }, [viewMode]);
+
+  // Close quote modal
+  const handleCloseQuote = () => {
+    setShowQuoteModal(false);
+    setCurrentQuote(null);
+  };
 
   // Handle admin login
   const handleAdminLogin = async () => {
@@ -311,6 +369,15 @@ const IdAllocationUI = () => {
           </div>
         )}
       </div>
+
+      {/* Motivational Quote Modal */}
+      {showQuoteModal && currentQuote && (
+        <MotivationalQuoteModal
+          quote={currentQuote.quote}
+          source={currentQuote.source}
+          onClose={handleCloseQuote}
+        />
+      )}
     </div>
   );
 };

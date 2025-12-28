@@ -16,7 +16,13 @@ import {
   verifyAdminPassword,
   createAdminSession,
   deleteAdminSession,
-  changeAdminPassword
+  changeAdminPassword,
+  getRandomQuote,
+  importQuotes,
+  getAllQuotes,
+  deleteQuote,
+  getQuoteInterval,
+  setQuoteInterval
 } from '../../id-allocation-service';
 import getDb from '../../db';
 
@@ -143,7 +149,7 @@ export async function POST(request: Request) {
 
   // Parse JSON for other actions - only once!
   const body = await request.json();
-  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status, password, operation } = body;
+  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status, password, operation, interval, text } = body;
   const ipAddress = getClientIp(request);
 
   console.log('Received action:', action);
@@ -169,6 +175,17 @@ export async function POST(request: Request) {
         }
         clearAllIds();
         return NextResponse.json({ success: true });
+      }
+
+      // Public quote actions
+      case 'getRandomQuote': {
+        const quote = getRandomQuote();
+        return NextResponse.json({ success: true, data: quote });
+      }
+
+      case 'getQuoteInterval': {
+        const interval = getQuoteInterval();
+        return NextResponse.json({ success: true, data: interval });
       }
 
       // Admin-only actions
@@ -271,6 +288,57 @@ export async function POST(request: Request) {
         }
         const results = searchEmployeeIds(query, status);
         return NextResponse.json({ success: true, data: results });
+      }
+
+      // Quote management actions (admin only)
+      case 'importQuotes': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        if (!text) {
+          return NextResponse.json({ success: false, error: 'No text provided' }, { status: 400 });
+        }
+        const result = importQuotes(text);
+        return NextResponse.json({
+          success: true,
+          uploadedCount: result.success,
+          failedCount: result.failed,
+          errors: result.errors
+        });
+      }
+
+      case 'getAllQuotes': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        const quotes = getAllQuotes();
+        return NextResponse.json({ success: true, data: quotes });
+      }
+
+      case 'deleteQuote': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        const result = deleteQuote(id);
+        if (result.success) {
+          return NextResponse.json({ success: true });
+        }
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
+
+      case 'setQuoteInterval': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        const result = setQuoteInterval(interval);
+        if (result.success) {
+          return NextResponse.json({ success: true });
+        }
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       }
 
       default:

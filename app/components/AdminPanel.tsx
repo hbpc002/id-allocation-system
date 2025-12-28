@@ -19,7 +19,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId }) => {
-  const [activeTab, setActiveTab] = useState<'view' | 'import' | 'manage' | 'password'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'import' | 'manage' | 'password' | 'quotes'>('view');
   const [employeeIds, setEmployeeIds] = useState<EmployeeId[]>([]);
   const [stats, setStats] = useState<{ total: number; available: number; disabled: number; allocated: number } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +39,58 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Quote states
+  const [quotes, setQuotes] = useState<Array<{ id: number; quote: string; source: string; createdAt: string }>>([]);
+  const [quoteFile, setQuoteFile] = useState<File | null>(null);
+  const [quoteImportResult, setQuoteImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [popupInterval, setPopupInterval] = useState<number>(86400000); // 默认24小时
+  const [activeQuoteSubTab, setActiveQuoteSubTab] = useState<'import' | 'list' | 'settings'>('import');
+
+  // Fetch quote interval (defined before use to avoid hoisting issues)
+  const fetchQuoteInterval = useCallback(async () => {
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getQuoteInterval' })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPopupInterval(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch quote interval:', err);
+    }
+  }, []);
+
+  // Fetch quotes (defined before use to avoid hoisting issues)
+  const fetchQuotes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'getAllQuotes' })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setQuotes(data.data);
+        setError(null);
+      } else {
+        setError(data.error || '获取名言失败');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取名言失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [adminSessionId]);
 
   // Fetch data
   const fetchData = useCallback(async () => {
@@ -83,8 +135,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
   useEffect(() => {
     if (adminSessionId) {
       fetchData();
+      fetchQuoteInterval();
     }
-  }, [adminSessionId, fetchData]);
+  }, [adminSessionId, fetchData, fetchQuoteInterval]);
+
+  // Load quotes when switching to quotes tab
+  useEffect(() => {
+    if (activeTab === 'quotes' && adminSessionId) {
+      fetchQuotes();
+    }
+  }, [activeTab, adminSessionId, fetchQuotes]);
 
   // Handle file import
   const handleImport = async () => {
@@ -326,6 +386,108 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
     }
   };
 
+  // Import quotes
+  const handleImportQuotes = async () => {
+    if (!quoteFile) {
+      setError('请选择文件');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const text = await quoteFile.text();
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'importQuotes', text })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setQuoteImportResult({
+          success: data.uploadedCount,
+          failed: data.failedCount,
+          errors: data.errors || []
+        });
+        setMessage(`导入成功: ${data.uploadedCount} 条, 失败: ${data.failedCount || 0} 条`);
+        setError(null);
+        fetchQuotes();
+      } else {
+        setError(data.error || '导入失败');
+        setMessage(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '导入失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete quote
+  const handleDeleteQuote = async (id: number) => {
+    if (!confirm('确定要删除这条名言吗？')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'deleteQuote', id })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage('名言已删除');
+        setError(null);
+        fetchQuotes();
+      } else {
+        setError(data.error || '删除失败');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '删除失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save popup interval
+  const handleSaveInterval = async () => {
+    if (popupInterval < 0) {
+      setError('间隔时间必须是非负数字');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'setQuoteInterval', interval: popupInterval })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage('弹窗间隔已更新');
+        setError(null);
+      } else {
+        setError(data.error || '更新失败');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '更新失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Toggle selection
   const toggleSelection = (id: number) => {
     setSelectedIds(prev =>
@@ -367,17 +529,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
       )}
 
       {/* Tabs */}
-      <div className="flex space-x-2 mb-6 border-b dark:border-gray-700">
+      <div className="flex space-x-2 mb-6 border-b dark:border-gray-700 overflow-x-auto">
         {[
           { key: 'view', label: '查看工号' },
           { key: 'import', label: '批量导入' },
           { key: 'manage', label: '单个管理' },
-          { key: 'password', label: '修改密码' }
+          { key: 'password', label: '修改密码' },
+          { key: 'quotes', label: '名言管理' }
         ].map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'view' | 'import' | 'manage' | 'password')}
-            className={`px-4 py-2 font-medium ${
+            onClick={() => setActiveTab(tab.key as 'view' | 'import' | 'manage' | 'password' | 'quotes')}
+            className={`px-4 py-2 font-medium whitespace-nowrap ${
               activeTab === tab.key
                 ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -682,6 +845,177 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
               >
                 {loading ? '修改中...' : '修改密码'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'quotes' && (
+          <div>
+            <div className="space-y-6">
+              {/* 子标签导航 */}
+              <div className="flex space-x-2 border-b dark:border-gray-700">
+                {[
+                  { key: 'import', label: '批量导入' },
+                  { key: 'list', label: '名言列表' },
+                  { key: 'settings', label: '弹窗设置' }
+                ].map(subTab => (
+                  <button
+                    key={subTab.key}
+                    onClick={() => setActiveQuoteSubTab(subTab.key as 'import' | 'list' | 'settings')}
+                    className={`px-3 py-1 text-sm font-medium ${
+                      activeQuoteSubTab === subTab.key
+                        ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {subTab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 子标签内容 */}
+              {activeQuoteSubTab === 'import' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block mb-2 font-medium">选择文本文件批量导入名言</label>
+                    <input
+                      type="file"
+                      accept=".txt"
+                      onChange={(e) => setQuoteFile(e.target.files?.[0] || null)}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+                  {quoteFile && (
+                    <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+                      <p className="font-medium">文件: {quoteFile.name}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">大小: {(quoteFile.size / 1024).toFixed(2)} KB</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleImportQuotes}
+                    disabled={!quoteFile || loading}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
+                  >
+                    {loading ? '导入中...' : '开始导入'}
+                  </button>
+                  {quoteImportResult && (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded">
+                      <p className="font-medium text-green-800 dark:text-green-300">导入结果:</p>
+                      <p>成功: {quoteImportResult.success} 条</p>
+                      <p>失败: {quoteImportResult.failed} 条</p>
+                      {quoteImportResult.errors && quoteImportResult.errors.length > 0 && (
+                        <div className="mt-2 text-sm text-red-600">
+                          <p>错误详情:</p>
+                          <ul className="list-disc list-inside">
+                            {quoteImportResult.errors.slice(0, 5).map((err: string, i: number) => (
+                              <li key={i}>{err}</li>
+                            ))}
+                            {quoteImportResult.errors.length > 5 && <li>...</li>}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
+                    <p className="font-medium mb-2">说明:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>每行一条名言，格式: <code className="bg-white dark:bg-gray-800 px-1 rounded">名言内容|来源</code></li>
+                      <li>来源可以是作者名或电影名</li>
+                      <li>来源为空时默认为佚名</li>
+                      <li>重复的名言会被自动跳过</li>
+                      <li>示例: <code className="bg-white dark:bg-gray-800 px-1 rounded">天道酬勤，厚德载物|老子</code></li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {activeQuoteSubTab === 'list' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold">名言列表 ({quotes.length} 条)</h3>
+                    <button
+                      onClick={fetchQuotes}
+                      className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                    >
+                      刷新
+                    </button>
+                  </div>
+                  {quotes.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">暂无名言，请先导入</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100 dark:bg-gray-700">
+                          <tr>
+                            <th className="p-2 text-left">ID</th>
+                            <th className="p-2 text-left">名言内容</th>
+                            <th className="p-2 text-left">来源</th>
+                            <th className="p-2 text-left">创建时间</th>
+                            <th className="p-2 text-left">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quotes.map((item) => (
+                            <tr key={item.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                              <td className="p-2">{item.id}</td>
+                              <td className="p-2 max-w-xs truncate" title={item.quote}>{item.quote}</td>
+                              <td className="p-2">{item.source}</td>
+                              <td className="p-2 text-gray-600 dark:text-gray-400 text-xs">
+                                {new Date(item.createdAt).toLocaleString()}
+                              </td>
+                              <td className="p-2">
+                                <button
+                                  onClick={() => handleDeleteQuote(item.id)}
+                                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                >
+                                  删除
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeQuoteSubTab === 'settings' && (
+                <div className="space-y-4">
+                  <div className="p-4 border rounded dark:border-gray-600">
+                    <h3 className="font-bold mb-3">弹窗显示间隔设置</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block mb-1 font-medium">间隔时间（小时）</label>
+                        <input
+                          type="number"
+                          value={Math.floor(popupInterval / 3600000)}
+                          onChange={(e) => {
+                            const hours = parseInt(e.target.value || '0');
+                            setPopupInterval(hours * 3600000);
+                          }}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                          min="0"
+                          placeholder="输入小时数，0表示每次刷新都显示"
+                        />
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          当前值: {Math.floor(popupInterval / 3600000)} 小时 ({popupInterval} 毫秒)
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          提示: 24小时 = 86400000毫秒，0表示每次刷新都显示
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleSaveInterval}
+                        disabled={loading}
+                        className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
+                      >
+                        {loading ? '保存中...' : '保存设置'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
