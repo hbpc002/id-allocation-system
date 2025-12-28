@@ -43,14 +43,17 @@ body {
 @keyframes springInRight {
   0% {
     opacity: 0;
-    transform: translateX(200px) scale(0.8);
+    transform: translateX(300px) scale(0.7);
   }
-  60% {
+  50% {
     opacity: 1;
-    transform: translateX(-15px) scale(1.05);
+    transform: translateX(-20px) scale(1.08);
   }
-  80% {
-    transform: translateX(5px) scale(0.98);
+  70% {
+    transform: translateX(8px) scale(0.96);
+  }
+  85% {
+    transform: translateX(-3px) scale(1.02);
   }
   100% {
     opacity: 1;
@@ -59,15 +62,15 @@ body {
 }
 
 @keyframes colorCycle {
-  0% { background-color: #fef3c7; }   /* 暖黄 */
-  25% { background-color: #dbeafe; }  /* 浅蓝 */
-  50% { background-color: #d1fae5; }  /* 浅绿 */
-  75% { background-color: #fce7f3; }  /* 浅粉 */
-  100% { background-color: #fef3c7; } /* 回到暖黄 */
+  0% { background-color: #eab308; }   /* 深暖黄 */
+  25% { background-color: #3b82f6; }  /* 深蓝 */
+  50% { background-color: #10b981; }  /* 深绿 */
+  75% { background-color: #ec4899; }  /* 深粉 */
+  100% { background-color: #eab308; } /* 回到深暖黄 */
 }
 
 .animate-springInRight {
-  animation: springInRight 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: springInRight 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .animate-colorCycle {
