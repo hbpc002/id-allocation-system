@@ -20,30 +20,22 @@ RUN pnpm build && \
     npm cache clean --force && \
     rm -rf ~/.npm ~/.cache
 
-# 多阶段构建 - 第二阶段：运行环境
+# 多阶段构建 - 第二阶段：最小运行环境
 FROM node:20-alpine AS runner
 
-# 安装必要的系统依赖、时区数据并创建用户
+# 安装必要的系统依赖、时区数据并创建用户（单层合并减少镜像大小）
 RUN apk add --no-cache dumb-init tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
+    apk del tzdata && \
+    rm -rf /var/cache/apk/* && \
     addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package.json 和 pnpm-lock.yaml
-COPY package.json pnpm-lock.yaml ./
-
-# 仅安装生产依赖并清理缓存
-RUN npm install -g pnpm@8 && \
-    pnpm install --frozen-lockfile --prod && \
-    pnpm store prune && \
-    npm cache clean --force && \
-    rm -rf ~/.npm ~/.cache
-
-# 从构建阶段复制构建产物
+# 从构建阶段复制构建产物（standalone模式已包含所有依赖，无需重新安装）
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
