@@ -104,11 +104,17 @@ function getDb(): Database.Database {
     _db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?)').run('quote_popup_interval', '86400000');
   }
 
-  // 迁移：添加 updatedAt 字段
-  try {
-    _db.prepare('ALTER TABLE employee_pool ADD COLUMN updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP').run();
-  } catch {
-    // 字段已存在，忽略
+  // 迁移：添加 updatedAt 字段（检查是否存在）
+  const tableInfo = _db.prepare("PRAGMA table_info(employee_pool)").all() as Array<{ name: string }>;
+  const hasUpdatedAt = tableInfo.some(col => col.name === 'updatedAt');
+
+  if (!hasUpdatedAt) {
+    console.log('[Migration] Adding updatedAt column to employee_pool table');
+    // SQLite 需要先添加可为空的列，然后更新默认值
+    _db.prepare('ALTER TABLE employee_pool ADD COLUMN updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP').run();
+    // 更新现有行的值
+    _db.prepare('UPDATE employee_pool SET updatedAt = CURRENT_TIMESTAMP WHERE updatedAt IS NULL').run();
+    console.log('[Migration] updatedAt column added successfully');
   }
 
   return _db;
