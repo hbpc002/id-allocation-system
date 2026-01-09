@@ -110,10 +110,10 @@ function getDb(): Database.Database {
 
   if (!hasUpdatedAt) {
     console.log('[Migration] Adding updatedAt column to employee_pool table');
-    // SQLite 需要先添加可为空的列，然后更新默认值
-    _db.prepare('ALTER TABLE employee_pool ADD COLUMN updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP').run();
-    // 更新现有行的值
-    _db.prepare('UPDATE employee_pool SET updatedAt = CURRENT_TIMESTAMP WHERE updatedAt IS NULL').run();
+    // SQLite 不支持添加带有非恒定默认值的列，所以先添加可为空的列
+    _db.prepare('ALTER TABLE employee_pool ADD COLUMN updatedAt TIMESTAMP').run();
+    // 更新现有行的值为当前时间
+    _db.prepare('UPDATE employee_pool SET updatedAt = datetime(\'now\') WHERE updatedAt IS NULL').run();
     console.log('[Migration] updatedAt column added successfully');
   }
 

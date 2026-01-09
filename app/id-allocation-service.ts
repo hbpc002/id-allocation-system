@@ -84,7 +84,7 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
 
     // Update employee_pool status to allocated
     getDb().prepare(
-      'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+      'UPDATE employee_pool SET status = ?, updatedAt = datetime(\'now\') WHERE id = ?'
     ).run('allocated', availableId);
   })();
 
@@ -106,7 +106,7 @@ const releaseId = (id: number) => {
 
     // Update employee_pool status back to available
     getDb().prepare(
-      'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+      'UPDATE employee_pool SET status = ?, updatedAt = datetime(\'now\') WHERE id = ?'
     ).run('available', id);
   })();
 
@@ -131,7 +131,7 @@ const cleanupExpiredIds = () => {
         // Update employee_pool status for expired IDs
         expiredRows.forEach(row => {
           getDb().prepare(
-            'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+            'UPDATE employee_pool SET status = ?, updatedAt = datetime(\'now\') WHERE id = ?'
           ).run('available', row.id);
         });
       })();
@@ -156,7 +156,7 @@ const clearAllIds = () => {
     // Reset all employee_pool status to available
     allocatedRows.forEach(row => {
       getDb().prepare(
-        'UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+        'UPDATE employee_pool SET status = ?, updatedAt = datetime(\'now\') WHERE id = ?'
       ).run('available', row.id);
     });
   })();
@@ -194,7 +194,7 @@ const verifyAdminSession = (sessionId: string): boolean => {
   const result = getDb().prepare('SELECT sessionId FROM admin_sessions WHERE sessionId = ?').get(sessionId);
   if (result) {
     // Update last activity
-    getDb().prepare('UPDATE admin_sessions SET lastActivity = CURRENT_TIMESTAMP WHERE sessionId = ?').run(sessionId);
+    getDb().prepare('UPDATE admin_sessions SET lastActivity = datetime(\'now\') WHERE sessionId = ?').run(sessionId);
     return true;
   }
   return false;
@@ -318,7 +318,7 @@ const updateEmployeeIdStatus = (id: number, status: 'available' | 'disabled'): {
       }
     }
 
-    getDb().prepare('UPDATE employee_pool SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(status, id);
+    getDb().prepare('UPDATE employee_pool SET status = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(status, id);
     return { success: true };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
