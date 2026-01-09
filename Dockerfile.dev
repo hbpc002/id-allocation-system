@@ -1,11 +1,22 @@
 # 开发环境Dockerfile
 FROM node:20-alpine
 
+# 清除所有代理环境变量，避免网络问题
+ENV http_proxy=""
+ENV https_proxy=""
+ENV HTTP_PROXY=""
+ENV HTTPS_PROXY=""
+ENV no_proxy=""
+ENV NO_PROXY=""
+
 # 安装必要的系统依赖、时区数据和pnpm
 RUN apk add --no-cache dumb-init git tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    npm install -g pnpm@8
+    npm install -g pnpm@8 && \
+    npm config delete proxy && \
+    npm config delete https-proxy && \
+    npm config delete http-proxy
 
 # 设置工作目录
 WORKDIR /app

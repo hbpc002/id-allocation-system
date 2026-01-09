@@ -1,11 +1,22 @@
 # 多阶段构建 - 第一阶段：构建环境
 FROM node:20-alpine AS builder
 
+# 清除所有代理环境变量，避免网络问题
+ENV http_proxy=""
+ENV https_proxy=""
+ENV HTTP_PROXY=""
+ENV HTTPS_PROXY=""
+ENV no_proxy=""
+ENV NO_PROXY=""
+
 # 设置工作目录
 WORKDIR /app
 
 # 安装特定版本的 pnpm 并复制依赖文件，然后安装依赖
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@8 && \
+    npm config delete proxy && \
+    npm config delete https-proxy && \
+    npm config delete http-proxy
 
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
