@@ -31,8 +31,7 @@ RUN npm install -g pnpm@8 && \
 COPY package.json pnpm-lock.yaml ./
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile && \
-    apk del python3 make g++ gcc musl-dev
+RUN pnpm install --frozen-lockfile
 
 # 复制源代码并构建应用，然后清理缓存
 COPY . .
