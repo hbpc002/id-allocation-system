@@ -122,3 +122,15 @@ function getDb(): Database.Database {
 
 // 导出获取数据库实例的函数
 export default getDb;
+
+// 重置数据库单例（仅用于测试）
+export function resetDb() {
+  if (_db) {
+    try {
+      _db.close();
+    } catch (e) {
+      // Ignore close errors
+    }
+  }
+  _db = null;
+}
