@@ -30,8 +30,8 @@ RUN npm install -g pnpm@8 && \
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile
+# 安装依赖（使用 --no-frozen-lockfile 允许锁文件更新）
+RUN pnpm install --no-frozen-lockfile
 
 # 复制源代码并构建应用，然后清理缓存
 COPY . .
