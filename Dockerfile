@@ -9,6 +9,15 @@ ENV HTTPS_PROXY=""
 ENV no_proxy=""
 ENV NO_PROXY=""
 
+# 安装构建工具和Python（用于better-sqlite3原生模块编译）
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    musl-dev \
+    && ln -sf python3 /usr/bin/python
+
 # 设置工作目录
 WORKDIR /app
 
@@ -22,7 +31,8 @@ RUN npm install -g pnpm@8 && \
 COPY package.json pnpm-lock.yaml ./
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile && \
+    apk del python3 make g++ gcc musl-dev
 
 # 复制源代码并构建应用，然后清理缓存
 COPY . .

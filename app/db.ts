@@ -128,7 +128,7 @@ export function resetDb() {
   if (_db) {
     try {
       _db.close();
-    } catch (e) {
+    } catch {
       // Ignore close errors
     }
   }

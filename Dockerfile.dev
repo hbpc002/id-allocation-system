@@ -9,14 +9,23 @@ ENV HTTPS_PROXY=""
 ENV no_proxy=""
 ENV NO_PROXY=""
 
-# 安装必要的系统依赖、时区数据和pnpm
-RUN apk add --no-cache dumb-init git tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
-    npm install -g pnpm@8 && \
-    npm config delete proxy && \
-    npm config delete https-proxy && \
-    npm config delete http-proxy
+# 安装必要的系统依赖、时区数据、pnpm和构建工具（用于better-sqlite3）
+RUN apk add --no-cache \
+    dumb-init \
+    git \
+    tzdata \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    musl-dev \
+    && ln -sf python3 /usr/bin/python \
+    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone \
+    && npm install -g pnpm@8 \
+    && npm config delete proxy \
+    && npm config delete https-proxy \
+    && npm config delete http-proxy
 
 # 设置工作目录
 WORKDIR /app
