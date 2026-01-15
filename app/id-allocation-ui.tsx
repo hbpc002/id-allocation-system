@@ -24,8 +24,12 @@ const IdAllocationUI = () => {
   const [viewMode, setViewMode] = useState<'user' | 'login' | 'admin'>('user');
   const [adminSessionId, setAdminSessionId] = useState<string | null>(null);
   const [loginPassword, setLoginPassword] = useState('');
+  const [mounted, setMounted] = useState(false);
 
-  // Quote modal states
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<{ quote: string; source: string } | null>(null);
 
@@ -290,7 +294,7 @@ const IdAllocationUI = () => {
 
             {/* Time */}
             <div className="border border-gray-900 p-2 text-center text-xs font-mono bg-gray-50">
-              {currentTime.toLocaleTimeString('zh-CN')}
+              {mounted ? currentTime.toLocaleTimeString('zh-CN') : ''}
             </div>
 
             {/* Scrolling List - Auto-scroll only when content exceeds container */}
@@ -370,8 +374,8 @@ const IdAllocationUI = () => {
         )}
       </div>
 
-      {/* Motivational Quote Modal */}
-      {showQuoteModal && currentQuote && (
+      {/* Motivational Quote Modal (guarded until mounted) */}
+      {mounted && showQuoteModal && currentQuote && (
         <MotivationalQuoteModal
           quote={currentQuote.quote}
           source={currentQuote.source}
