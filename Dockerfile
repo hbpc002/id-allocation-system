@@ -41,7 +41,10 @@ COPY . .
 # 禁用遥测以提高构建速度
 ENV NEXT_TELEMETRY_DISABLED=1
 # 使用更快的构建配置，跳过一些耗时的优化
-RUN pnpm build
+RUN pnpm build && \
+    pnpm store prune && \
+    npm cache clean --force && \
+    rm -rf ~/.npm ~/.cache
 
 # 多阶段构建 - 第二阶段：最小运行环境
 FROM node:20-alpine AS runner
