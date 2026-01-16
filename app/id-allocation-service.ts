@@ -1,14 +1,14 @@
 import getDb from './db';
 
-// ==================== 工号池管理功能 ====================
+// ==================== 分机号池管理功能 ====================
 
-// 获取当前已分配的工号列表
+// 获取当前已分配的分机号列表
 const getCurrentlyAllocatedIds = () => {
   const rows = getDb().prepare('SELECT id FROM allocated_ids').all() as { id: number }[];
   return new Set(rows.map(row => row.id));
 };
 
-// 获取工号池统计信息
+// 获取分机号池统计信息
 const getPoolStats = () => {
   const total = getDb().prepare('SELECT COUNT(*) as count FROM employee_pool').get() as { count: number };
   const available = getDb().prepare(`
@@ -26,7 +26,7 @@ const getPoolStats = () => {
   };
 };
 
-// 分配工号
+// 分配分机号
 const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, currentId?: number) => {
   console.log(`ID allocation requested for IP: ${ipAddress}, forceNewAllocation: ${forceNewAllocation}`);
 
@@ -92,7 +92,7 @@ const allocateId = (ipAddress: string, forceNewAllocation: boolean = false, curr
   return { id: availableId, uniqueId: uniqueSessionId, ipAddress: ipAddress };
 };
 
-// 释放工号
+// 释放分机号
 const releaseId = (id: number) => {
   console.log(`Releasing ID: ${id}`);
 
@@ -113,7 +113,7 @@ const releaseId = (id: number) => {
   console.log(`ID ${id} released successfully`);
 };
 
-// 清理过期工号
+// 清理过期分机号
 const cleanupExpiredIds = () => {
   try {
     const now = new Date();
@@ -144,7 +144,7 @@ const cleanupExpiredIds = () => {
   }
 };
 
-// 清空所有已分配工号
+// 清空所有已分配分机号
 const clearAllIds = () => {
   getDb().transaction(() => {
     // Get all allocated IDs before clearing
@@ -205,9 +205,9 @@ const deleteAdminSession = (sessionId: string): void => {
   getDb().prepare('DELETE FROM admin_sessions WHERE sessionId = ?').run(sessionId);
 };
 
-// ==================== 工号管理功能 ====================
+// ==================== 分机号管理功能 ====================
 
-// 获取所有工号信息（包含状态）
+// 获取所有分机号信息（包含状态）
 const getAllEmployeeIds = () => {
   const rows = getDb().prepare(`
     SELECT
@@ -236,7 +236,7 @@ const getAllEmployeeIds = () => {
   return rows;
 };
 
-// 批量导入工号
+// 批量导入分机号
 const importEmployeeIds = (ids: number[]): { success: number; failed: number; errors: string[] } => {
   const errors: string[] = [];
   let success = 0;
@@ -248,7 +248,7 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
         // Check if ID already exists
         const existing = getDb().prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
         if (existing) {
-          errors.push(`工号 ${id} 已存在`);
+          errors.push(`分机号 ${id} 已存在`);
           failed++;
           return;
         }
@@ -257,7 +257,7 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
         getDb().prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
         success++;
       } catch (error) {
-        errors.push(`工号 ${id} 导入失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(`分机号 ${id} 导入失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
         failed++;
       }
     });
@@ -266,12 +266,12 @@ const importEmployeeIds = (ids: number[]): { success: number; failed: number; er
   return { success, failed, errors };
 };
 
-// 添加单个工号
+// 添加单个分机号
 const addEmployeeId = (id: number): { success: boolean; error?: string } => {
   try {
     const existing = getDb().prepare('SELECT id FROM employee_pool WHERE id = ?').get(id);
     if (existing) {
-      return { success: false, error: `工号 ${id} 已存在` };
+      return { success: false, error: `分机号 ${id} 已存在` };
     }
 
     getDb().prepare('INSERT INTO employee_pool (id, status) VALUES (?, ?)').run(id, 'available');
@@ -281,18 +281,18 @@ const addEmployeeId = (id: number): { success: boolean; error?: string } => {
   }
 };
 
-// 删除工号
+// 删除分机号
 const deleteEmployeeId = (id: number): { success: boolean; error?: string } => {
   try {
     // Check if ID is currently allocated
     const allocated = getDb().prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
     if (allocated) {
-      return { success: false, error: `工号 ${id} 正在使用中，无法删除` };
+      return { success: false, error: `分机号 ${id} 正在使用中，无法删除` };
     }
 
     const result = getDb().prepare('DELETE FROM employee_pool WHERE id = ?').run(id);
     if (result.changes === 0) {
-      return { success: false, error: `工号 ${id} 不存在` };
+      return { success: false, error: `分机号 ${id} 不存在` };
     }
 
     return { success: true };
@@ -301,20 +301,20 @@ const deleteEmployeeId = (id: number): { success: boolean; error?: string } => {
   }
 };
 
-// 更新工号状态（启用/停用）
+// 更新分机号状态（启用/停用）
 const updateEmployeeIdStatus = (id: number, status: 'available' | 'disabled'): { success: boolean; error?: string } => {
   try {
     // Check if ID exists
     const existing = getDb().prepare('SELECT id, status FROM employee_pool WHERE id = ?').get(id);
     if (!existing) {
-      return { success: false, error: `工号 ${id} 不存在` };
+      return { success: false, error: `分机号 ${id} 不存在` };
     }
 
     // Cannot enable a disabled ID if it's already allocated
     if (status === 'available') {
       const allocated = getDb().prepare('SELECT id FROM allocated_ids WHERE id = ?').get(id);
       if (allocated) {
-        return { success: false, error: `工号 ${id} 正在使用中，无法启用` };
+        return { success: false, error: `分机号 ${id} 正在使用中，无法启用` };
       }
     }
 
@@ -325,7 +325,7 @@ const updateEmployeeIdStatus = (id: number, status: 'available' | 'disabled'): {
   }
 };
 
-// 批量操作工号
+// 批量操作分机号
 const batchUpdateEmployeeIds = (ids: number[], action: 'enable' | 'disable' | 'delete'): { success: number; failed: number; errors: string[] } => {
   const errors: string[] = [];
   let success = 0;
@@ -352,7 +352,7 @@ const batchUpdateEmployeeIds = (ids: number[], action: 'enable' | 'disable' | 'd
       if (result.success) {
         success++;
       } else {
-        errors.push(`工号 ${id}: ${result.error}`);
+        errors.push(`分机号 ${id}: ${result.error}`);
         failed++;
       }
     });
@@ -361,7 +361,7 @@ const batchUpdateEmployeeIds = (ids: number[], action: 'enable' | 'disable' | 'd
   return { success, failed, errors };
 };
 
-// 搜索工号
+// 搜索分机号
 const searchEmployeeIds = (query: string, status?: string) => {
   let sql = 'SELECT ep.id, ep.status, ep.createdAt, ep.updatedAt, ai.ipAddress FROM employee_pool ep LEFT JOIN allocated_ids ai ON ep.id = ai.id WHERE ep.id LIKE ?';
   const params: (string | number)[] = [`%${query}%`];
@@ -509,7 +509,7 @@ const setQuoteInterval = (interval: number): { success: boolean; error?: string 
 };
 
 export {
-  // 工号分配相关
+  // 分机号分配相关
   allocateId,
   releaseId,
   cleanupExpiredIds,
@@ -524,7 +524,7 @@ export {
   verifyAdminSession,
   deleteAdminSession,
 
-  // 工号管理相关
+  // 分机号管理相关
   getAllEmployeeIds,
   importEmployeeIds,
   addEmployeeId,

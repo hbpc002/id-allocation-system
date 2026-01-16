@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "工号分配系统",
-  description: "Employee ID Allocation System",
+  title: "分机号分配系统",
+  description: "Extension Number Allocation System",
 };
 
 export default function RootLayout({

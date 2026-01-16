@@ -79,12 +79,13 @@ export async function GET(request: Request) {
     const clientAllocatedId = clientAllocatedIdRow ? clientAllocatedIdRow.id : null;
     console.log('Client allocated ID:', clientAllocatedId);
 
-    // Get all allocated IDs with their IP addresses directly from the database
+    // Get all allocated IDs with their IP addresses and allocation time directly from the database
     console.log('Querying all allocated IDs...');
-    const allocatedRows = getDb().prepare('SELECT id, ipAddress FROM allocated_ids').all() as { id: number, ipAddress: string }[];
+    const allocatedRows = getDb().prepare('SELECT id, ipAddress, allocationTime FROM allocated_ids').all() as { id: number, ipAddress: string, allocationTime: string }[];
     const allocatedIdsWithIPs = allocatedRows.map(row => ({
       id: row.id,
-      ipAddress: row.ipAddress
+      ipAddress: row.ipAddress,
+      allocationTime: row.allocationTime
     }));
     console.log('Allocated IDs count:', allocatedIdsWithIPs.length);
 

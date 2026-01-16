@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 interface AllocatedIdInfo {
   id: number;
   ipAddress: string;
+  allocationTime?: string;
 }
 
 // Create a consistent date initialization to avoid hydration mismatch
@@ -84,7 +85,7 @@ export const useIdAllocation = () => {
   // Clock In: Allocate a new ID
   const handleClockIn = async (e?: React.MouseEvent<HTMLButtonElement>, forceNewAllocation: boolean = false) => {
     if (allocatedId !== null && !forceNewAllocation) {
-      setErrorMessage('您已申请到工号，请尝试签入。');
+      setErrorMessage('您已申请到分机号，请尝试签入。');
       return;
     }
     try {
@@ -226,7 +227,7 @@ export const useIdAllocation = () => {
         const data = await response.json();
         if (data.success) {
           setErrorMessage(null);
-          let message = `成功导入 ${data.uploadedCount} 个工号。`;
+          let message = `成功导入 ${data.uploadedCount} 个分机号。`;
           if (data.failedCount > 0) {
             message += `\n失败 ${data.failedCount} 个。`;
             if (data.errors && data.errors.length > 0) {

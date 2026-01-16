@@ -32,11 +32,11 @@ export const IdAllocationStatus: React.FC<IdAllocationStatusProps> = ({
   return (
     <div className="mb-6 grid grid-cols-2 gap-3">
       <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-lg">
-        <p className="text-xs text-slate-500 mb-1">工号总数</p>
+        <p className="text-xs text-slate-500 mb-1">分机号总数</p>
         <p className="text-xl font-semibold text-slate-800">{totalIds}</p>
       </div>
       <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
-        <p className="text-xs text-emerald-600 mb-1">可用工号</p>
+        <p className="text-xs text-emerald-600 mb-1">可用分机号</p>
         <p className="text-xl font-semibold text-emerald-700">{availableIds}</p>
       </div>
       <div className="p-3 bg-indigo-50/80 border border-indigo-200 rounded-lg">

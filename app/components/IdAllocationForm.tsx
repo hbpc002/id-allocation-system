@@ -23,13 +23,13 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
         onClick={onClockIn}
         className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
       >
-        申请工号
+        申请分机号
       </button>
       <button
         onClick={onClockOut}
         className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
       >
-        释放工号
+        释放分机号
       </button>
       {isLoggedIn && (
         <>
@@ -43,7 +43,7 @@ export const IdAllocationForm: React.FC<IdAllocationFormProps> = ({
             onClick={() => document.getElementById('fileInput')?.click()}
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow"
           >
-            上传工号池
+            上传分机号池
           </button>
         </>
       )}

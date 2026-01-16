@@ -157,7 +157,7 @@ const IdAllocationUI = () => {
   // We need to: 1) Remove duplicates, 2) Mark current user's ID
   const scrollingIds = (() => {
     // Use Map to ensure uniqueness
-    const uniqueMap = new Map<number, { id: number; ipAddress: string }>();
+    const uniqueMap = new Map<number, { id: number; ipAddress: string; allocationTime?: string }>();
 
     // Add all from API, but track what we've seen
     for (const item of allocatedIds) {
@@ -187,7 +187,7 @@ const IdAllocationUI = () => {
       {/* Header - Happy Coder Style: Minimal, functional */}
       <div className="border border-gray-900 bg-white mb-4">
         <div className="px-4 py-3 flex justify-between items-center border-b border-gray-900">
-          <h1 className="text-lg font-bold">工号分配系统</h1>
+          <h1 className="text-lg font-bold">分机号分配系统</h1>
           <div className="flex gap-1">
             {viewMode === 'user' && (
               <button
@@ -221,7 +221,7 @@ const IdAllocationUI = () => {
             {/* Your Allocated ID - Prominent display */}
             {allocatedId !== null && (
               <div className="p-4 border border-gray-900 bg-white text-center">
-                <div className="text-xs text-gray-600 mb-1">您的工号</div>
+                <div className="text-xs text-gray-600 mb-1">您的分机号</div>
                 <div className="text-4xl font-bold tracking-tighter">{allocatedId}</div>
               </div>
             )}
@@ -232,13 +232,13 @@ const IdAllocationUI = () => {
                 onClick={() => handleClockIn()}
                 className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
               >
-                申请工号
+                申请分机号
               </button>
               <button
                 onClick={handleClockOut}
                 className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
               >
-                释放工号
+                释放分机号
               </button>
               {adminSessionId && (
                 <>
@@ -252,7 +252,7 @@ const IdAllocationUI = () => {
                     onClick={() => document.getElementById('fileInput')?.click()}
                     className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
                   >
-                    上传工号池
+                    上传分机号池
                   </button>
                 </>
               )}
@@ -275,11 +275,11 @@ const IdAllocationUI = () => {
             {/* Stats - Compact 2x2 grid */}
             <div className="grid grid-cols-2 gap-2">
               <div className="border border-gray-900 p-2 bg-gray-50">
-                <div className="text-[10px] text-gray-600">工号总数</div>
+                <div className="text-[10px] text-gray-600">分机号总数</div>
                 <div className="text-base font-bold">{totalIds}</div>
               </div>
               <div className="border border-gray-900 p-2 bg-gray-50">
-                <div className="text-[10px] text-gray-600">可用工号</div>
+                <div className="text-[10px] text-gray-600">可用分机号</div>
                 <div className="text-base font-bold">{availableIds}</div>
               </div>
               <div className="border border-gray-900 p-2 bg-gray-50">
@@ -300,7 +300,7 @@ const IdAllocationUI = () => {
             {/* Scrolling List - Auto-scroll only when content exceeds container */}
             <div className="border border-gray-900">
               <div className="px-3 py-2 text-xs font-bold border-b border-gray-900 bg-gray-50">
-                已分配工号 {scrollingIds.length > 8 && <span className="text-gray-500 font-normal">(自动滚动)</span>}
+                已分配分机号
               </div>
               {scrollingIds.length === 0 ? (
                 <div className="p-4 text-center text-xs text-gray-500">暂无数据</div>
@@ -316,7 +316,9 @@ const IdAllocationUI = () => {
                           {item.id}
                           {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
                         </span>
-                        <span className="text-[10px] text-gray-600">{item.ipAddress}</span>
+                        <span className="text-[10px] text-gray-600">
+                          {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
+                        </span>
                       </div>
                     ))}
                     {scrollingIds.length > 8 && scrollingIds.map((item, index) => (
@@ -325,7 +327,9 @@ const IdAllocationUI = () => {
                           {item.id}
                           {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
                         </span>
-                        <span className="text-[10px] text-gray-600">{item.ipAddress}</span>
+                        <span className="text-[10px] text-gray-600">
+                          {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -357,9 +361,6 @@ const IdAllocationUI = () => {
             >
               登录
             </button>
-            <div className="text-center text-[10px] text-gray-600">
-              默认密码: <span className="font-mono font-bold">root123</span>
-            </div>
           </div>
         )}
 

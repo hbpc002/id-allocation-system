@@ -187,7 +187,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
     if (!newId) return;
     const id = parseInt(newId);
     if (isNaN(id)) {
-      setError('请输入有效的工号');
+      setError('请输入有效的分机号');
       return;
     }
 
@@ -204,7 +204,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
 
       const data = await response.json();
       if (data.success) {
-        setMessage(`工号 ${id} 添加成功`);
+        setMessage(`分机号 ${id} 添加成功`);
         setError(null);
         setNewId('');
         fetchData();
@@ -222,11 +222,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
   // Batch update
   const handleBatchUpdate = async (operation: 'enable' | 'disable' | 'delete') => {
     if (selectedIds.length === 0) {
-      setError('请先选择工号');
+      setError('请先选择分机号');
       return;
     }
 
-    if (!confirm(`确定要对选中的 ${selectedIds.length} 个工号执行 ${operation === 'enable' ? '启用' : operation === 'disable' ? '停用' : '删除'} 操作吗？`)) {
+    if (!confirm(`确定要对选中的 ${selectedIds.length} 个分机号执行 ${operation === 'enable' ? '启用' : operation === 'disable' ? '停用' : '删除'} 操作吗？`)) {
       return;
     }
 
@@ -262,7 +262,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
 
   // Delete single ID
   const handleDeleteId = async (id: number) => {
-    if (!confirm(`确定要删除工号 ${id} 吗？`)) return;
+    if (!confirm(`确定要删除分机号 ${id} 吗？`)) return;
 
     setLoading(true);
     try {
@@ -277,7 +277,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
 
       const data = await response.json();
       if (data.success) {
-        setMessage(`工号 ${id} 已删除`);
+        setMessage(`分机号 ${id} 已删除`);
         setError(null);
         fetchData();
       } else {
@@ -305,7 +305,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
 
       const data = await response.json();
       if (data.success) {
-        setMessage(`工号 ${id} 状态已更新`);
+        setMessage(`分机号 ${id} 状态已更新`);
         setError(null);
         fetchData();
       } else {
@@ -531,7 +531,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
       {/* Tabs */}
       <div className="flex space-x-2 mb-6 border-b dark:border-gray-700 overflow-x-auto">
         {[
-          { key: 'view', label: '查看工号' },
+          { key: 'view', label: '查看分机号' },
           { key: 'import', label: '批量导入' },
           { key: 'manage', label: '单个管理' },
           { key: 'password', label: '修改密码' },
@@ -558,7 +558,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
         <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">总工号</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">总分机号</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{stats.available}</div>
@@ -582,7 +582,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
-                placeholder="搜索工号..."
+                placeholder="搜索分机号..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
@@ -627,7 +627,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                 <thead className="bg-gray-100 dark:bg-gray-700">
                   <tr>
                     <th className="p-2 text-left">选择</th>
-                    <th className="p-2 text-left">工号</th>
+                    <th className="p-2 text-left">分机号</th>
                     <th className="p-2 text-left">状态</th>
                     <th className="p-2 text-left">IP地址</th>
                     <th className="p-2 text-left">分配时间</th>
@@ -700,7 +700,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
           <div>
             <div className="space-y-4">
               <div>
-                <label className="block mb-2 font-medium">选择文本文件（每行一个工号）</label>
+                <label className="block mb-2 font-medium">选择文本文件（每行一个分机号）</label>
                 <input
                   type="file"
                   accept=".txt"
@@ -742,8 +742,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
                 <p className="font-medium mb-2">说明:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>每行一个工号（纯数字）</li>
-                  <li>重复的工号会被自动跳过</li>
+                  <li>每行一个分机号（纯数字）</li>
+                  <li>重复的分机号会被自动跳过</li>
                   <li>导入后状态默认为可用</li>
                 </ul>
               </div>
@@ -756,11 +756,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
             <div className="space-y-6">
               {/* Add ID */}
               <div className="p-4 border rounded dark:border-gray-600">
-                <h3 className="font-bold mb-3">添加单个工号</h3>
+                <h3 className="font-bold mb-3">添加单个分机号</h3>
                 <div className="flex gap-2">
                   <input
                     type="number"
-                    placeholder="输入工号"
+                    placeholder="输入分机号"
                     value={newId}
                     onChange={(e) => setNewId(e.target.value)}
                     className="flex-1 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
@@ -780,7 +780,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
-                      if (confirm('确定要清空所有已分配的工号吗？')) {
+                      if (confirm('确定要清空所有已分配的分机号吗？')) {
                         fetch('/api/id-allocation', {
                           method: 'POST',
                           headers: {
@@ -790,7 +790,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                           body: JSON.stringify({ action: 'clearAll' })
                         }).then(res => res.json()).then(data => {
                           if (data.success) {
-                            setMessage('已清空所有已分配工号');
+                            setMessage('已清空所有已分配分机号');
                             fetchData();
                           } else {
                             setError(data.error || '清空失败');
@@ -800,7 +800,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                     }}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
                   >
-                    清空所有已分配工号
+                    清空所有已分配分机号
                   </button>
                 </div>
               </div>
