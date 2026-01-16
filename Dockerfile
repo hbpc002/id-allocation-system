@@ -33,12 +33,12 @@ COPY package.json pnpm-lock.yaml ./
 # 安装依赖（使用 --no-frozen-lockfile 允许锁文件更新）
 RUN pnpm install --no-frozen-lockfile
 
-# 复制源代码并构建应用，然后清理缓存
+# 复制源代码并构建应用
 COPY . .
-RUN pnpm build && \
-    pnpm store prune && \
-    npm cache clean --force && \
-    rm -rf ~/.npm ~/.cache
+# 禁用遥测以提高构建速度
+ENV NEXT_TELEMETRY_DISABLED=1
+# 使用更快的构建配置，跳过一些耗时的优化
+RUN pnpm build
 
 # 多阶段构建 - 第二阶段：最小运行环境
 FROM node:20-alpine AS runner
