@@ -154,7 +154,7 @@ const IdAllocationUI = () => {
 
   // Build scrolling list - ensure NO duplicates
   // allocatedIds from API contains all allocated IDs
-  // We need to: 1) Remove duplicates, 2) Mark current user's ID
+  // We need to: 1) Remove duplicates, 2) Keep the actual IP from API
   const scrollingIds = (() => {
     // Use Map to ensure uniqueness
     const uniqueMap = new Map<number, { id: number; ipAddress: string; allocationTime?: string }>();
@@ -164,11 +164,6 @@ const IdAllocationUI = () => {
       if (!uniqueMap.has(item.id)) {
         uniqueMap.set(item.id, item);
       }
-    }
-
-    // If user has an ID, ensure it's marked with "Your IP"
-    if (allocatedId !== null) {
-      uniqueMap.set(allocatedId, { id: allocatedId, ipAddress: 'Your IP' });
     }
 
     // Convert to sorted array
@@ -312,12 +307,11 @@ const IdAllocationUI = () => {
                   <div className={`absolute w-full ${scrollingIds.length > 8 ? 'scroll-content animate-scrolling' : ''}`}>
                     {scrollingIds.map((item, index) => (
                       <div key={index} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
-                        <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
+                        <span>
                           {item.id}
-                          {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
                         </span>
                         <span className="text-[10px] text-gray-600">
-                          {item.ipAddress !== 'Your IP' ? item.ipAddress : ''}
+                          {item.ipAddress}
                         </span>
                         <span className="text-[10px] text-gray-600">
                           {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
@@ -326,12 +320,11 @@ const IdAllocationUI = () => {
                     ))}
                     {scrollingIds.length > 8 && scrollingIds.map((item, index) => (
                       <div key={`dup-${index}`} className="flex justify-between px-3 py-1.5 border-b border-gray-200 text-xs">
-                        <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
+                        <span>
                           {item.id}
-                          {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
                         </span>
                         <span className="text-[10px] text-gray-600">
-                          {item.ipAddress !== 'Your IP' ? item.ipAddress : ''}
+                          {item.ipAddress}
                         </span>
                         <span className="text-[10px] text-gray-600">
                           {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
