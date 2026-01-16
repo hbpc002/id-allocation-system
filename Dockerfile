@@ -10,8 +10,11 @@ ENV no_proxy=""
 ENV NO_PROXY=""
 
 # 安装构建工具和Python（用于better-sqlite3原生模块编译）
+# python3-dev 和 py3-pip 包含 distutils
 RUN apk add --no-cache \
     python3 \
+    python3-dev \
+    py3-pip \
     make \
     g++ \
     gcc \
