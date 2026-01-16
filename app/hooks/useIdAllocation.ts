@@ -100,6 +100,13 @@ export const useIdAllocation = () => {
         setAllocatedId(data.id);
         setUniqueSessionId(data.uniqueId);
         setErrorMessage(null);
+        // Copy the allocated ID to clipboard
+        try {
+          await navigator.clipboard.writeText(data.id.toString());
+          console.log(`ID ${data.id} copied to clipboard`);
+        } catch (clipboardError) {
+          console.log('Failed to copy to clipboard:', clipboardError);
+        }
         // Update allocatedIds list
         const newAllocatedIds = [...allocatedIds, { id: data.id, ipAddress: data.ipAddress }];
         setAllocatedIds(newAllocatedIds.filter((idInfo, index, self) =>

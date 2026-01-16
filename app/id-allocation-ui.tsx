@@ -227,13 +227,13 @@ const IdAllocationUI = () => {
                 onClick={() => handleClockIn()}
                 className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
               >
-                申请分机号
+                申请
               </button>
               <button
                 onClick={handleClockOut}
                 className="py-2 border border-gray-900 bg-white hover:bg-gray-900 hover:text-white font-medium text-sm transition-colors"
               >
-                释放分机号
+                释放
               </button>
               {adminSessionId && (
                 <>
