@@ -317,6 +317,9 @@ const IdAllocationUI = () => {
                           {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
                         </span>
                         <span className="text-[10px] text-gray-600">
+                          {item.ipAddress !== 'Your IP' ? item.ipAddress : ''}
+                        </span>
+                        <span className="text-[10px] text-gray-600">
                           {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
                         </span>
                       </div>
@@ -326,6 +329,9 @@ const IdAllocationUI = () => {
                         <span className={item.ipAddress === 'Your IP' ? 'font-bold' : ''}>
                           {item.id}
                           {item.ipAddress === 'Your IP' && <span className="ml-2 text-[10px] text-gray-600">[您的]</span>}
+                        </span>
+                        <span className="text-[10px] text-gray-600">
+                          {item.ipAddress !== 'Your IP' ? item.ipAddress : ''}
                         </span>
                         <span className="text-[10px] text-gray-600">
                           {item.allocationTime ? new Date(item.allocationTime).toLocaleTimeString('zh-CN') : ''}
