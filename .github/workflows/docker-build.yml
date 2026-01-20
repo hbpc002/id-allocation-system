@@ -44,6 +44,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate version number
+        id: version
+        run: |
+          # 获取当前时间戳
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          # 获取Git短SHA
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          # 生成版本号: 1.0.{timestamp}-{short-sha}
+          VERSION="1.0.${TIMESTAMP}-${SHORT_SHA}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -54,6 +66,8 @@ jobs:
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event.inputs.tag != '' }}
             # main分支 -> latest
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            # 自动生成的版本号
+            type=raw,value=${{ steps.version.outputs.version }}
             # 语义化版本标签 v1.0.0 -> 1.0.0, 1.0, 1
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -82,6 +96,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Tags:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
