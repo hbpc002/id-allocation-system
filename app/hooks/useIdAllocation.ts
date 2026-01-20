@@ -2,6 +2,36 @@
 
 import { useState, useEffect } from 'react';
 
+// Fallback clipboard function for HTTP environments
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    // Try Clipboard API first (requires HTTPS)
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    
+    // Fallback to execCommand for HTTP environments
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'absolute';
+    textArea.style.opacity = '0';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const success = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return success;
+    
+  } catch (error) {
+    console.error('Copy to clipboard failed:', error);
+    return false;
+  }
+};
+
 interface AllocatedIdInfo {
   id: number;
   ipAddress: string;
@@ -102,7 +132,7 @@ export const useIdAllocation = () => {
         setErrorMessage(null);
         // Copy the allocated ID to clipboard
         try {
-          await navigator.clipboard.writeText(data.id.toString());
+          await copyToClipboard(data.id.toString());
           console.log(`ID ${data.id} copied to clipboard`);
         } catch (clipboardError) {
           console.log('Failed to copy to clipboard:', clipboardError);
