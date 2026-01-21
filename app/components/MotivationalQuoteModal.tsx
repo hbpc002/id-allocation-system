@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+// Global color palette for color cycling
+const COLOR_SET: string[] = ['#f59e0b', '#2563eb', '#059669', '#db2777', '#eab308', '#14b8a6'];
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 interface MotivationalQuoteModalProps {
   quote: string;
@@ -17,11 +20,16 @@ const MotivationalQuoteModal: React.FC<MotivationalQuoteModalProps> = ({
 }) => {
   const [animationPhase, setAnimationPhase] = useState(0);
   const fadeDelay = propFadeDelay ?? 5000;
-  // Random color color-set for CSS-driven color cycling
-  const COLOR_SET = ['#f59e0b', '#2563eb', '#059669', '#db2777', '#eab308', '#14b8a6'];
+  // CSS color variables for gradient cycling
+  const colorVars: Record<string, string> = {
+    '--cc0': COLOR_SET[0],
+    '--cc1': COLOR_SET[1],
+    '--cc2': COLOR_SET[2],
+    '--cc3': COLOR_SET[3],
+  };
   // DOM ref for the modal element to update CSS variables
   const modalRef = useRef<HTMLDivElement | null>(null);
-  function randomizeStops() {
+  const randomizeStops = useCallback(() => {
     const el = modalRef.current;
     if (!el) return;
     const arr = Array.from({ length: 4 }, () => COLOR_SET[Math.floor(Math.random() * COLOR_SET.length)]);
@@ -29,7 +37,7 @@ const MotivationalQuoteModal: React.FC<MotivationalQuoteModalProps> = ({
     el.style.setProperty('--cc1', arr[1]);
     el.style.setProperty('--cc2', arr[2]);
     el.style.setProperty('--cc3', arr[3]);
-  }
+  }, []);
   // Preserve a stable reference to onClose to handle asynchronous calls safely
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -37,7 +45,7 @@ const MotivationalQuoteModal: React.FC<MotivationalQuoteModalProps> = ({
   }, [onClose]);
   useEffect(() => {
     randomizeStops();
-  }, []);
+  }, [randomizeStops]);
 
   // Unify with CSS-driven color cycle: apply random colors on animation iterations
   // Note: onAnimationIteration handler will update the CSS variables to a new random set
@@ -118,11 +126,7 @@ const MotivationalQuoteModal: React.FC<MotivationalQuoteModalProps> = ({
         maxWidth: '340px',
         transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
         opacity: 1,
-        // color stops for dynamic CSS-based color cycling
-        ['--cc0' as any]: COLOR_SET[0],
-        ['--cc1' as any]: COLOR_SET[1],
-        ['--cc2' as any]: COLOR_SET[2],
-        ['--cc3' as any]: COLOR_SET[3],
+        ...colorVars,
         ...getAnimationStyle()
       } as React.CSSProperties}
     >
