@@ -796,4 +796,60 @@ describe('API Route - /api/id-allocation', () => {
       expect(data.success).toBe(false);
     });
   });
+
+  describe('getFadeOutDelay action', () => {
+    it('should return current fade out delay', async () => {
+      const { POST } = await getRouteModule();
+      const request = createMockRequest({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { action: 'getFadeOutDelay' }
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(typeof data.data).toBe('number');
+      expect(data.data).toBeGreaterThanOrEqual(1000);
+      expect(data.data).toBeLessThanOrEqual(60000);
+    });
+  });
+
+  describe('setFadeOutDelay action', () => {
+    it('should set fade out delay with admin auth', async () => {
+      const { POST } = await getRouteModule();
+      const request = createMockRequest({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': 'dummy'
+        },
+        body: { action: 'setFadeOutDelay', delay: 10000 }
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+
+    it('should reject setFadeOutDelay without admin auth', async () => {
+      const { POST } = await getRouteModule();
+      const request = createMockRequest({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { action: 'setFadeOutDelay', delay: 10000 }
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Admin authentication required');
+    });
+  });
 });

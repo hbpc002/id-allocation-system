@@ -480,6 +480,23 @@ const deleteQuote = (id: number): { success: boolean; error?: string } => {
   }
 };
 
+const batchDeleteQuotes = (ids: number[]): { success: boolean; deletedCount?: number; error?: string } => {
+  try {
+    if (ids.length === 0) {
+      return { success: false, error: '请选择要删除的名言' };
+    }
+
+    const placeholders = ids.map(() => '?').join(',');
+    const result = getDb().prepare(
+      `DELETE FROM motivational_quotes WHERE id IN (${placeholders})`
+    ).run(...ids);
+
+    return { success: true, deletedCount: result.changes };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
 // ==================== 系统配置管理功能 ====================
 
 // 获取弹窗间隔配置（毫秒）
@@ -488,7 +505,7 @@ const getQuoteInterval = (): number => {
     'SELECT value FROM system_config WHERE key = ?'
   ).get('quote_popup_interval') as { value: string } | undefined;
 
-  return result ? parseInt(result.value) : 86400000; // 默认24小时
+  return result ? parseInt(result.value) : 0; // 默认0小时，每次都显示
 };
 
 // 设置弹窗间隔配置（毫秒）
@@ -501,6 +518,32 @@ const setQuoteInterval = (interval: number): { success: boolean; error?: string 
     getDb().prepare(
       'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
     ).run('quote_popup_interval', interval.toString());
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// 获取渐隐延迟时间配置（毫秒）
+const getFadeOutDelay = (): number => {
+  const result = getDb().prepare(
+    'SELECT value FROM system_config WHERE key = ?'
+  ).get('quote_fade_out_delay') as { value: string } | undefined;
+
+  return result ? parseInt(result.value) : 5000; // 默认5秒
+};
+
+// 设置渐隐延迟时间配置（毫秒）
+const setFadeOutDelay = (delay: number): { success: boolean; error?: string } => {
+  try {
+    if (isNaN(delay) || delay < 1000 || delay > 60000) {
+      return { success: false, error: '渐隐延迟时间必须在1-60秒之间' };
+    }
+
+    getDb().prepare(
+      'INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)'
+    ).run('quote_fade_out_delay', delay.toString());
 
     return { success: true };
   } catch (error) {
@@ -541,5 +584,8 @@ export {
 
   // 系统配置相关
   getQuoteInterval,
-  setQuoteInterval
+  setQuoteInterval,
+  getFadeOutDelay,
+  setFadeOutDelay,
+  batchDeleteQuotes
 };

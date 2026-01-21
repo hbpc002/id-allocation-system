@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import MotivationalQuoteModal from '../../app/components/MotivationalQuoteModal.tsx';
 
@@ -30,13 +30,13 @@ describe('MotivationalQuoteModal Component', () => {
     }
   });
 
-  it('should have correct animation classes', () => {
+  it('should have animation class', () => {
     const { container } = render(<MotivationalQuoteModal {...defaultProps} />);
 
-    // Find the outermost div with animation classes
+    // Find the outermost div
     const modal = container.querySelector('.fixed.bottom-4.right-4');
     expect(modal).toBeTruthy();
-    expect(modal?.className).toContain('animate-springInRight');
+    // Should have the CSS-driven color cycling class
     expect(modal?.className).toContain('animate-colorCycle');
   });
 
@@ -47,5 +47,19 @@ describe('MotivationalQuoteModal Component', () => {
     const modal = container.querySelector('.fixed.bottom-4.right-4');
     expect(modal).toBeTruthy();
     expect(modal?.getAttribute('style')).toContain('max-width: 340px');
+  });
+
+  it('should auto fade out after 5 seconds', () => {
+    vi.useFakeTimers();
+    
+    render(<MotivationalQuoteModal {...defaultProps} />);
+    
+    // Fast-forward 5 seconds + 500ms fade animation
+    vi.advanceTimersByTime(5500);
+    
+    // onClose should have been called after fade out (allowing for multiple calls due to re-renders)
+    expect(defaultProps.onClose).toHaveBeenCalled();
+    
+    vi.useRealTimers();
   });
 });

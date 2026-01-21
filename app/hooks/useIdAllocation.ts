@@ -53,6 +53,7 @@ export const useIdAllocation = () => {
   const [availableIds, setAvailableIds] = useState<number>(0);
   const [disabledIds, setDisabledIds] = useState<number>(0);
   const [allocatedIdsCount, setAllocatedIdsCount] = useState<number>(0);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   // Refresh allocated IDs and total pool count from the server
   const refreshData = async () => {
@@ -132,8 +133,11 @@ export const useIdAllocation = () => {
         setErrorMessage(null);
         // Copy the allocated ID to clipboard
         try {
-          await copyToClipboard(data.id.toString());
-          console.log(`ID ${data.id} copied to clipboard`);
+          const success = await copyToClipboard(data.id.toString());
+          if (success) {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 3000);
+          }
         } catch (clipboardError) {
           console.log('Failed to copy to clipboard:', clipboardError);
         }
@@ -309,6 +313,7 @@ export const useIdAllocation = () => {
     availableIds,
     disabledIds,
     allocatedIdsCount,
+    copySuccess,
     handleClockIn,
     handleClockOut,
     handleClearAll,

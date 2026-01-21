@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "run opencode",
+        "type": "shell",
+        "command": "opencode web --hostname 0.0.0.0",
+        "runOptions": { "runOn": "folderOpen" },   // 关键行
+        "problemMatcher": []
+      }
+    ]
+  }

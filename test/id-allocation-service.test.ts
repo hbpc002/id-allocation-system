@@ -629,5 +629,55 @@ describe('ID Allocation Service', () => {
         expect(result.success).toBe(false);
       });
     });
+
+    describe('getFadeOutDelay', () => {
+      it('should return default fade out delay', async () => {
+        const { getFadeOutDelay } = await getServiceFunctions();
+        const delay = getFadeOutDelay();
+
+        expect(delay).toBe(5000); // Default 5 seconds
+      });
+
+      it('should return configured fade out delay', async () => {
+        const { setFadeOutDelay, getFadeOutDelay } = await getServiceFunctions();
+        setFadeOutDelay(3000); // 3 seconds
+        const delay = getFadeOutDelay();
+
+        expect(delay).toBe(3000);
+      });
+    });
+
+    describe('setFadeOutDelay', () => {
+      it('should set valid fade out delay', async () => {
+        const { setFadeOutDelay, getFadeOutDelay } = await getServiceFunctions();
+        const result = setFadeOutDelay(8000);
+
+        expect(result.success).toBe(true);
+        expect(getFadeOutDelay()).toBe(8000);
+      });
+
+      it('should reject invalid fade out delay - too small', async () => {
+        const { setFadeOutDelay } = await getServiceFunctions();
+        const result = setFadeOutDelay(500);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('渐隐延迟时间必须在1-60秒之间');
+      });
+
+      it('should reject invalid fade out delay - too large', async () => {
+        const { setFadeOutDelay } = await getServiceFunctions();
+        const result = setFadeOutDelay(70000);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('渐隐延迟时间必须在1-60秒之间');
+      });
+
+      it('should reject NaN fade out delay', async () => {
+        const { setFadeOutDelay } = await getServiceFunctions();
+        const result = setFadeOutDelay(NaN);
+
+        expect(result.success).toBe(false);
+      });
+    });
   });
 });

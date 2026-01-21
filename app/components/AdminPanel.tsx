@@ -45,7 +45,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
   const [quoteFile, setQuoteFile] = useState<File | null>(null);
   const [quoteImportResult, setQuoteImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const [popupInterval, setPopupInterval] = useState<number>(86400000); // 默认24小时
+  const [fadeOutDelay, setFadeOutDelay] = useState<number>(5000); // 默认5秒
   const [activeQuoteSubTab, setActiveQuoteSubTab] = useState<'import' | 'list' | 'settings'>('import');
+  const [selectedQuoteIds, setSelectedQuoteIds] = useState<number[]>([]);
 
   // Fetch quote interval (defined before use to avoid hoisting issues)
   const fetchQuoteInterval = useCallback(async () => {
@@ -62,6 +64,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
       }
     } catch (err) {
       console.error('Failed to fetch quote interval:', err);
+    }
+  }, []);
+
+  // Fetch fade out delay (defined before use to avoid hoisting issues)
+  const fetchFadeOutDelay = useCallback(async () => {
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getFadeOutDelay' })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setFadeOutDelay(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch fade out delay:', err);
     }
   }, []);
 
@@ -136,8 +156,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
     if (adminSessionId) {
       fetchData();
       fetchQuoteInterval();
+      fetchFadeOutDelay();
     }
-  }, [adminSessionId, fetchData, fetchQuoteInterval]);
+  }, [adminSessionId, fetchData, fetchQuoteInterval, fetchFadeOutDelay]);
 
   // Load quotes when switching to quotes tab
   useEffect(() => {
@@ -448,11 +469,66 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
         fetchQuotes();
       } else {
         setError(data.error || '删除失败');
+        setMessage(null);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '删除失败');
+    } catch {
+      setError('删除失败');
+      setMessage(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBatchDeleteQuotes = async () => {
+    if (selectedQuoteIds.length === 0) {
+      setError('请先选择要删除的名言');
+      return;
+    }
+
+    if (!confirm(`确定要删除选中的 ${selectedQuoteIds.length} 条名言吗？`)) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'batchDeleteQuotes', ids: selectedQuoteIds })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage(`成功删除 ${data.deletedCount} 条名言`);
+        setError(null);
+        setSelectedQuoteIds([]);
+        fetchQuotes();
+      } else {
+        setError(data.error || '批量删除失败');
+        setMessage(null);
+      }
+    } catch {
+      setError('批量删除失败');
+      setMessage(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectQuote = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedQuoteIds(prev => [...prev, id]);
+    } else {
+      setSelectedQuoteIds(prev => prev.filter(selectedId => selectedId !== id));
+    }
+  };
+
+  const handleSelectAllQuotes = (checked: boolean) => {
+    if (checked) {
+      setSelectedQuoteIds(quotes.map(q => q.id));
+    } else {
+      setSelectedQuoteIds([]);
     }
   };
 
@@ -477,6 +553,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
       const data = await response.json();
       if (data.success) {
         setMessage('弹窗间隔已更新');
+        setError(null);
+      } else {
+        setError(data.error || '更新失败');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '更新失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save fade out delay
+  const handleSaveFadeOutDelay = async () => {
+    if (fadeOutDelay < 1000) {
+      setError('渐隐延迟时间不能少于1秒');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': adminSessionId
+        },
+        body: JSON.stringify({ action: 'setFadeOutDelay', delay: fadeOutDelay })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage('渐隐延迟时间已更新');
         setError(null);
       } else {
         setError(data.error || '更新失败');
@@ -933,12 +1041,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="font-bold">名言列表 ({quotes.length} 条)</h3>
-                    <button
-                      onClick={fetchQuotes}
-                      className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
-                    >
-                      刷新
-                    </button>
+                    <div className="flex gap-2">
+                      {selectedQuoteIds.length > 0 && (
+                        <button
+                          onClick={handleBatchDeleteQuotes}
+                          disabled={loading}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded text-sm"
+                        >
+                          批量删除 ({selectedQuoteIds.length})
+                        </button>
+                      )}
+                      <button
+                        onClick={fetchQuotes}
+                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                      >
+                        刷新
+                      </button>
+                    </div>
                   </div>
                   {quotes.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">暂无名言，请先导入</div>
@@ -947,6 +1066,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                       <table className="w-full text-sm">
                         <thead className="bg-gray-100 dark:bg-gray-700">
                           <tr>
+                            <th className="p-2 text-left">
+                              <input
+                                type="checkbox"
+                                checked={selectedQuoteIds.length === quotes.length && quotes.length > 0}
+                                onChange={(e) => handleSelectAllQuotes(e.target.checked)}
+                                className="rounded"
+                              />
+                            </th>
                             <th className="p-2 text-left">ID</th>
                             <th className="p-2 text-left">名言内容</th>
                             <th className="p-2 text-left">来源</th>
@@ -956,7 +1083,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                         </thead>
                         <tbody>
                           {quotes.map((item) => (
-                            <tr key={item.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <tr key={item.id} className={`border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 ${selectedQuoteIds.includes(item.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                              <td className="p-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedQuoteIds.includes(item.id)}
+                                  onChange={(e) => handleSelectQuote(item.id, e.target.checked)}
+                                  className="rounded"
+                                />
+                              </td>
                               <td className="p-2">{item.id}</td>
                               <td className="p-2 max-w-xs truncate" title={item.quote}>{item.quote}</td>
                               <td className="p-2">{item.source}</td>
@@ -1009,6 +1144,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout, adminSessionId
                         onClick={handleSaveInterval}
                         disabled={loading}
                         className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
+                      >
+                        {loading ? '保存中...' : '保存设置'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded dark:border-gray-600">
+                    <h3 className="font-bold mb-3">名言渐隐延迟设置</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block mb-1 font-medium">渐隐延迟时间（秒）</label>
+                        <input
+                          type="number"
+                          value={Math.floor(fadeOutDelay / 1000)}
+                          onChange={(e) => {
+                            const seconds = parseInt(e.target.value || '5');
+                            setFadeOutDelay(seconds * 1000);
+                          }}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                          min="1"
+                          max="60"
+                          placeholder="输入秒数，名言显示后多久开始渐隐"
+                        />
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          当前值: {Math.floor(fadeOutDelay / 1000)} 秒 ({fadeOutDelay} 毫秒)
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          提示: 名言显示后多久开始自动渐隐，范围1-60秒
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleSaveFadeOutDelay}
+                        disabled={loading}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
                       >
                         {loading ? '保存中...' : '保存设置'}
                       </button>

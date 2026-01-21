@@ -98,10 +98,10 @@ function getDb(): Database.Database {
     _db.prepare('INSERT INTO passwords (key, value) VALUES (?, ?)').run('login_password', defaultPassword);
   }
 
-  // 插入默认系统配置（24小时 = 86400000ms）
+  // 插入默认系统配置（0小时 = 0ms，每次都显示）
   const existingQuoteInterval = _db.prepare('SELECT value FROM system_config WHERE key = ?').get('quote_popup_interval');
   if (!existingQuoteInterval) {
-    _db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?)').run('quote_popup_interval', '86400000');
+    _db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?)').run('quote_popup_interval', '0');
   }
 
   // 迁移：添加 updatedAt 字段（检查是否存在）

@@ -21,8 +21,11 @@ import {
   importQuotes,
   getAllQuotes,
   deleteQuote,
+  batchDeleteQuotes,
   getQuoteInterval,
-  setQuoteInterval
+  setQuoteInterval,
+  getFadeOutDelay,
+  setFadeOutDelay
 } from '../../id-allocation-service';
 import getDb from '../../db';
 
@@ -150,7 +153,7 @@ export async function POST(request: Request) {
 
   // Parse JSON for other actions - only once!
   const body = await request.json();
-  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status, password, operation, interval, text } = body;
+  const { action, id, forceNewAllocation, ids, oldPassword, newPassword, query, status, password, operation, interval, text, delay } = body;
   const ipAddress = getClientIp(request);
 
   console.log('Received action:', action);
@@ -187,6 +190,11 @@ export async function POST(request: Request) {
       case 'getQuoteInterval': {
         const interval = getQuoteInterval();
         return NextResponse.json({ success: true, data: interval });
+      }
+
+      case 'getFadeOutDelay': {
+        const delay = getFadeOutDelay();
+        return NextResponse.json({ success: true, data: delay });
       }
 
       // Admin-only actions
@@ -330,12 +338,39 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       }
 
+      case 'batchDeleteQuotes': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        if (!ids || !Array.isArray(ids)) {
+          return NextResponse.json({ success: false, error: 'Invalid ids parameter' }, { status: 400 });
+        }
+        const result = batchDeleteQuotes(ids);
+        if (result.success) {
+          return NextResponse.json({ success: true, deletedCount: result.deletedCount });
+        }
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
+
       case 'setQuoteInterval': {
         const isAdmin = await verifyAdminAuth(request);
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
         }
         const result = setQuoteInterval(interval);
+        if (result.success) {
+          return NextResponse.json({ success: true });
+        }
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
+
+      case 'setFadeOutDelay': {
+        const isAdmin = await verifyAdminAuth(request);
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Admin authentication required' }, { status: 401 });
+        }
+        const result = setFadeOutDelay(delay);
         if (result.success) {
           return NextResponse.json({ success: true });
         }

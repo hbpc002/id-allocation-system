@@ -15,6 +15,7 @@ const IdAllocationUI = () => {
     availableIds,
     disabledIds,
     allocatedIdsCount,
+    copySuccess,
     handleClockIn,
     handleClockOut,
     handleClearAll,
@@ -28,10 +29,12 @@ const IdAllocationUI = () => {
 
   useEffect(() => {
     setMounted(true);
+    fetchFadeOutDelay();
   }, []);
 
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<{ quote: string; source: string } | null>(null);
+  const [fadeOutDelay, setFadeOutDelay] = useState(5000); // 默认5秒
 
   // Check for saved admin session on mount
   useEffect(() => {
@@ -101,6 +104,24 @@ const IdAllocationUI = () => {
       checkAndShowQuote();
     }
   }, [viewMode]);
+
+  // Fetch fade out delay
+  const fetchFadeOutDelay = async () => {
+    try {
+      const response = await fetch('/api/id-allocation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getFadeOutDelay' })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setFadeOutDelay(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch fade out delay:', err);
+    }
+  };
 
   // Close quote modal
   const handleCloseQuote = () => {
@@ -218,6 +239,9 @@ const IdAllocationUI = () => {
               <div className="p-4 border border-gray-900 bg-white text-center">
                 <div className="text-xs text-gray-600 mb-1">您的分机号</div>
                 <div className="text-4xl font-bold tracking-tighter">{allocatedId}</div>
+                {copySuccess && (
+                  <div className="text-xs text-green-600 mt-1">分机号已自动复制，可直接粘贴使用</div>
+                )}
               </div>
             )}
 
@@ -379,6 +403,7 @@ const IdAllocationUI = () => {
         <MotivationalQuoteModal
           quote={currentQuote.quote}
           source={currentQuote.source}
+          fadeDelay={fadeOutDelay}
           onClose={handleCloseQuote}
         />
       )}
